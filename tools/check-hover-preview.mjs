@@ -2,15 +2,16 @@
 // Verifies the square under the pointer shows the same preview colour as the rest of the preview.
 // Usage: node tools/check-hover-preview.mjs [baseUrl]   (default http://localhost:8000)
 import { spawn } from 'node:child_process';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const baseUrl = process.argv[2] ?? 'http://localhost:8000';
 const port = 9300 + Math.floor(Math.random() * 500);
+const profileDir = mkdtempSync(join(tmpdir(), 'hms-check-'));
 const chrome = spawn('google-chrome', [
   '--headless=new', '--no-sandbox', '--disable-gpu', `--remote-debugging-port=${port}`,
-  `--user-data-dir=${mkdtempSync(join(tmpdir(), 'hms-check-'))}`, 'about:blank',
+  `--user-data-dir=${profileDir}`, 'about:blank',
 ], { stdio: 'ignore' });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -53,6 +54,9 @@ try {
   }
   ws.close();
 } finally {
+  const exited = new Promise((r) => chrome.once('exit', r));
   chrome.kill();
+  await exited;
+  rmSync(profileDir, { recursive: true, force: true });
 }
 process.exit(failures ? 1 : 0);
