@@ -29,6 +29,16 @@ Only defects actually observed are logged here. Each entry has: reproduction ste
 - Regression test: no automated test. The label is built in the page code (`src/ui.js`), and the automated tests cover only the rules engine. The testing agent verified it in the browser's accessibility tree: A1 allowed; A8 not allowed (off board); A3 after placing Victory not allowed (overlaps Victory); all 100 cells labelled (60 allowed, 40 not allowed on an empty board).
 - Verifying commit: `b51dd5e`.
 
+### B3 — Browser check left temporary Chrome profiles on disk (development tool only)
+- Found: 2026-09-30, Milestone 1. Devin Review flagged it on PR #2 (commit `5ad9315`). Confirmed on the machine: 5 leftover `hms-check-*` profile folders in the temp directory after earlier runs.
+- Steps to reproduce: run `node tools/check-hover-preview.mjs` several times, then list `hms-check-*` folders in the temp directory.
+- Expected: no folders left behind.
+- Actual: one new folder per run.
+- Cause: the script created a Chrome profile folder but never deleted it.
+- Fix (`cd1611b`): after Chrome exits, the script deletes its profile folder.
+- Regression test: manual only. After the fix, one run left 0 `hms-check-*` folders. Affects only the development tool, not the game.
+- Verifying commit: `cd1611b`.
+
 <!-- Template
 ### B<n> — short title
 - Found: date, milestone, how (test / manual check / review)
