@@ -18,8 +18,9 @@
       <h2 id="orders-heading">Orders</h2>
       <ol class="instructions">
         <li>Click a square on the <strong>Royal Navy Fleet</strong> board to place the ship marked <em>Next</em>. Ships run right or down from that square.</li>
-        <li>Press <strong>Rotate</strong> (or the <kbd>R</kbd> key) to switch between horizontal and vertical.</li>
+        <li>Press <strong>Rotate</strong> (or <kbd>R</kbd>) to switch between horizontal and vertical. While pointing at your board with the mouse, <kbd>←</kbd>/<kbd>→</kbd> set horizontal and <kbd>↑</kbd>/<kbd>↓</kbd> set vertical.</li>
         <li>Or press <strong>Random placement</strong>. <strong>Start battle</strong> unlocks once all five ships are placed.</li>
+        <li>Keyboard only: <kbd>Tab</kbd> to your board, move with the arrow keys, place with <kbd>Enter</kbd>, rotate with <kbd>R</kbd>.</li>
       </ol>
       <div class="controls">
         <button type="button" id="rotate-btn">Rotate (R): Horizontal</button>
@@ -32,14 +33,14 @@
 
     <div class="boards">
       <section class="board-panel" aria-labelledby="player-heading">
-        <h2 id="player-heading">Royal Navy Fleet</h2>
+        <h2 id="player-heading"><span class="flags" id="player-flags" aria-hidden="true"></span>Royal Navy Fleet</h2>
         <p class="board-caption">Your ships</p>
         <div class="board" id="player-board" role="group" aria-labelledby="player-heading"></div>
         <ul class="roster" id="player-roster" aria-label="Royal Navy ships"></ul>
       </section>
 
       <section class="board-panel" aria-labelledby="enemy-heading">
-        <h2 id="enemy-heading">Franco-Spanish Fleet</h2>
+        <h2 id="enemy-heading"><span class="flags" id="enemy-flags" aria-hidden="true"></span>Franco-Spanish Fleet</h2>
         <p class="board-caption">Enemy waters — positions hidden</p>
         <div class="board enemy" id="enemy-board" role="group" aria-labelledby="enemy-heading"></div>
         <ul class="roster" id="enemy-roster" aria-label="Franco-Spanish ships"></ul>

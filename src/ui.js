@@ -17,6 +17,7 @@ import {
   randomFleet,
 } from './engine.js';
 import { createRng } from './rng.js';
+import { ENEMY_NATIONS, flagSvg, shipProfileSvg, shipTopSvg } from './art.js';
 
 const PLACEMENT = 'placement';
 const DEPLOYED = 'deployed';
@@ -44,7 +45,12 @@ const state = {
   orientation: HORIZONTAL,
   hover: null,
   focus: { row: 0, col: 0 },
+  inputMode: 'keyboard',
+  pointerOverBoard: false,
 };
+
+document.getElementById('player-flags').innerHTML = flagSvg('white-ensign');
+document.getElementById('enemy-flags').innerHTML = flagSvg('french') + flagSvg('spanish');
 
 const playerCells = buildBoard(el.playerBoard, 'player');
 const enemyCells = buildBoard(el.enemyBoard, 'enemy');
@@ -129,13 +135,8 @@ function renderPlayerBoard() {
       let label = coordLabel(row, col);
       if (ship) {
         const index = ship.cells.findIndex((c) => c.row === row && c.col === col);
-        button.classList.add('ship', ship.orientation === HORIZONTAL ? 'h' : 'v');
-        if (index === 0) button.classList.add('bow');
-        if (index === ship.cells.length - 1) button.classList.add('stern');
-        const hull = document.createElement('span');
-        hull.className = 'hull';
-        button.append(hull);
-        label += `, ${ship.name}`;
+        button.classList.add('ship');
+        label += `, ${ship.name}${index === 0 ? ' (bow)' : ''}`;
       } else {
         label += ', open water';
       }
@@ -152,6 +153,26 @@ function renderPlayerBoard() {
       button.tabIndex = placing && row === state.focus.row && col === state.focus.col ? 0 : -1;
     }
   }
+  renderShipArt();
+}
+
+let drawnShipsKey = '';
+
+function renderShipArt() {
+  const key = JSON.stringify(state.player.ships.map((ship) => [ship.id, ship.orientation, ship.cells[0]]));
+  if (key === drawnShipsKey) return;
+  drawnShipsKey = key;
+  el.playerBoard.querySelectorAll('.ship-art').forEach((node) => node.remove());
+  for (const ship of state.player.ships) {
+    const { row, col } = ship.cells[0];
+    const art = document.createElement('div');
+    art.className = 'ship-art';
+    art.setAttribute('aria-hidden', 'true');
+    art.style.gridRow = `${row + 2} / span ${ship.orientation === VERTICAL ? ship.length : 1}`;
+    art.style.gridColumn = `${col + 2} / span ${ship.orientation === HORIZONTAL ? ship.length : 1}`;
+    art.innerHTML = shipTopSvg(ship.length, 'royal', ship.orientation);
+    el.playerBoard.append(art);
+  }
 }
 
 function renderEnemyBoard() {
@@ -164,15 +185,14 @@ function renderEnemyBoard() {
   }
 }
 
-function silhouette(length) {
+function profile(length, nation) {
   const span = document.createElement('span');
-  span.className = 'silhouette';
-  span.setAttribute('aria-hidden', 'true');
-  for (let i = 0; i < length; i += 1) span.append(document.createElement('span'));
+  span.className = 'profile';
+  span.innerHTML = shipProfileSvg(length, nation);
   return span;
 }
 
-function rosterItem(name, length, stateText, isNext) {
+function rosterItem(name, length, nation, stateText, isNext) {
   const li = document.createElement('li');
   if (isNext) li.classList.add('next');
   const nameSpan = document.createElement('span');
@@ -180,7 +200,7 @@ function rosterItem(name, length, stateText, isNext) {
   const stateSpan = document.createElement('span');
   stateSpan.className = 'ship-state';
   stateSpan.textContent = stateText;
-  li.append(nameSpan, silhouette(length), stateSpan);
+  li.append(nameSpan, profile(length, nation), stateSpan);
   return li;
 }
 
@@ -190,11 +210,11 @@ function renderRosters() {
     ...ROYAL_NAVY_FLEET.map((spec) => {
       const placed = state.player.ships.some((s) => s.id === spec.id);
       const isNext = next?.id === spec.id;
-      return rosterItem(spec.name, spec.length, placed ? 'Placed' : isNext ? 'Next' : 'To place', isNext);
+      return rosterItem(spec.name, spec.length, 'royal', placed ? 'Placed' : isNext ? 'Next' : 'To place', isNext);
     }),
   );
   el.enemyRoster.replaceChildren(
-    ...FRANCO_SPANISH_FLEET.map((spec) => rosterItem(spec.name, spec.length, 'Hidden', false)),
+    ...FRANCO_SPANISH_FLEET.map((spec) => rosterItem(spec.name, spec.length, ENEMY_NATIONS[spec.id], 'Hidden', false)),
   );
 }
 
@@ -237,11 +257,15 @@ function tryPlaceAt(row, col) {
   }
 }
 
-function rotate() {
+function setOrientation(orientation) {
   if (state.phase !== PLACEMENT) return;
-  state.orientation = state.orientation === HORIZONTAL ? VERTICAL : HORIZONTAL;
+  state.orientation = orientation;
   render();
   promptNextShip();
+}
+
+function rotate() {
+  setOrientation(state.orientation === HORIZONTAL ? VERTICAL : HORIZONTAL);
 }
 
 function moveFocus(dRow, dCol) {
@@ -272,6 +296,7 @@ el.playerBoard.addEventListener('mouseover', (event) => {
 });
 
 el.playerBoard.addEventListener('mouseleave', () => {
+  state.pointerOverBoard = false;
   state.hover = null;
   renderPlayerBoard();
 });
@@ -286,11 +311,33 @@ el.playerBoard.addEventListener('focusin', (event) => {
   renderPlayerBoard();
 });
 
-el.playerBoard.addEventListener('keydown', (event) => {
-  const moves = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
-  if (moves[event.key]) {
+el.playerBoard.addEventListener('mouseenter', () => {
+  state.pointerOverBoard = true;
+});
+
+el.playerBoard.addEventListener('mousemove', () => {
+  state.inputMode = 'mouse';
+});
+
+const ARROW_MOVES = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
+const ARROW_ORIENTATIONS = { ArrowUp: VERTICAL, ArrowDown: VERTICAL, ArrowLeft: HORIZONTAL, ArrowRight: HORIZONTAL };
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Tab') {
+    state.inputMode = 'keyboard';
+    return;
+  }
+  if (!ARROW_MOVES[event.key] || state.phase !== PLACEMENT) return;
+  if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+  const boardFocused = Boolean(document.activeElement?.closest?.('#player-board'));
+  if (state.inputMode === 'mouse' && state.pointerOverBoard) {
     event.preventDefault();
-    moveFocus(...moves[event.key]);
+    setOrientation(ARROW_ORIENTATIONS[event.key]);
+    if (boardFocused) playerCells[state.focus.row][state.focus.col].focus();
+  } else if (boardFocused) {
+    event.preventDefault();
+    state.inputMode = 'keyboard';
+    moveFocus(...ARROW_MOVES[event.key]);
   }
 });
 

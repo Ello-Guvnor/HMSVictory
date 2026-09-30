@@ -21,10 +21,10 @@ Acceptance criteria (built and verified in PR #2; milestone done only once Alex 
 - [x] Each fleet is five ships of lengths 5, 4, 3, 3, 2. Royal Navy: Victory 5, Sovereign 4, Vanguard 3, Defiance 3, Swift 2. Franco-Spanish: Santísima Trinidad 5, Bucentaure 4, Redoutable 3, Santa Ana 3, Argonaute 2.
 - [x] Engine rejects any placement that overlaps another ship or runs off the board; touching ships are allowed. (Automated tests.)
 - [x] "Random placement" always produces a legal fleet (automated test across many seeds).
-- [x] Manual placement: click a cell to place the next ship; a Rotate button (and `R` key) switches horizontal/vertical; a preview shows where the ship will go and whether it is legal; illegal clicks are refused with a message.
+- [x] Manual placement: click a cell to place the next ship; a Rotate button (and `R` key) switches horizontal/vertical, and while pointing with the mouse the arrow keys set orientation (←/→ horizontal, ↑/↓ vertical); a preview shows where the ship will go and whether it is legal; illegal clicks are refused with a message.
 - [x] A way to clear placement and start again.
 - [x] "Start battle" is disabled until all five ships are placed.
-- [x] Title "HMS Victory" with subtitle "Built with Devin, captained by Alex."; navy blue, parchment/cream, restrained brass accents; simple ship silhouettes; no elaborate animations, no sound, no dependencies.
+- [x] Title "HMS Victory" with subtitle "Built with Devin, captained by Alex."; navy blue, parchment/cream, restrained brass accents; period sailing-warship drawings and national flags beside the fleet headings (D15); no elaborate animations, no sound, no dependencies.
 - [x] `node --test` passes; results recorded in the PR.
 
 ## Milestone 2 — Game rules
