@@ -22,6 +22,7 @@ Recorded verbatim in SPEC.md (game spec and opening-brief working rules).
 | D10 | 2026-09-30 | Themed messages, e.g. "Royal Navy’s turn", "Franco-Spanish Fleet is firing", "Enemy ship sunk", "Royal Navy victory", "Your fleet has been defeated". | **Approved by Alex** |
 | D12 | 2026-09-30 | Development-only browser check `tools/check-hover-preview.mjs` (headless Chrome, not shipped) added as the regression test for bug B1, since the Node tests cover only the rules engine. | Proposed (Devin) |
 | D13 | 2026-09-30 | Milestone 1 "Start battle" only locks the board and says firing arrives in Milestone 2. Turn-taking and the opponent are out of scope for Milestone 1, per Alex's instruction. | Per Alex's instruction |
+| D14 | 2026-09-30 | Start battle is gated on a full-fleet check (`validateFleet`: every ship placed exactly once, correct length, one straight line, on the board, no overlap) rather than only "all five present", per Alex's restated Milestone 1 brief ("Validate ship lengths, boundaries, overlap, and a complete fleet before enabling Start"). | Per Alex's instruction |
 | D11 | 2026-09-30 | Visual style: navy blue, parchment/cream, restrained brass accents, clear coordinates, simple ship silhouettes; no elaborate animations or new dependencies. Replaces "navy and white, restrained radar styling". This is a visual/wording change only — gameplay, acceptance, accessibility and testing requirements unchanged. | **Approved by Alex** |
 
 ## Questions raised by Alex
