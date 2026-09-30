@@ -1,8 +1,8 @@
 # HMS Victory — Battleship
 
-**The Royal Navy — Built with Devin, captained by Alex.**
+*Built with Devin, captained by Alex.*
 
-A browser Battleship game: HMS Victory (England) against the Spanish Armada, played against a computer strategy (not an AI/LLM).
+A browser Battleship game: a Trafalgar-inspired Royal Navy against the Franco-Spanish Fleet, played against a computer strategy (not an AI/LLM).
 
 Status: planning. See:
 - [SPEC.md](SPEC.md) — requirements

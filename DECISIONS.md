@@ -15,7 +15,12 @@ Recorded verbatim in SPEC.md (game spec and opening-brief working rules).
 | D3 | 2026-09-30 | Tests use Node's built-in test runner (`node --test`), a development-only tool with no extra packages. | Proposed (Devin) |
 | D4 | 2026-09-30 | In milestone 2 the computer fires random legal shots as a temporary stand-in, so turn rules can be verified before the strategy exists. Replaced in milestone 3. | Proposed (Devin) |
 | D5 | 2026-09-30 | Hosting: GitHub Pages on this repo (free, static, no paid services). | Proposed (Devin) |
-| D6 | 2026-09-30 | Board labels: "Your fleet — HMS Victory" and "Enemy waters — Spanish Armada". | Proposed (Devin) |
+| D6 | 2026-09-30 | ~~Board labels "Your fleet — HMS Victory" / "Enemy waters — Spanish Armada".~~ Superseded by D7. | Superseded |
+| D7 | 2026-09-30 | Theme: game title "HMS Victory", subtitle "Built with Devin, captained by Alex."; Trafalgar-inspired Royal Navy vs Franco-Spanish Fleet; boards "Royal Navy Fleet" (human) and "Franco-Spanish Fleet" (computer); no "Fleet Command" or "Spanish Armada" wording. | **Approved by Alex** |
+| D8 | 2026-09-30 | Human ships: Victory 5, Sovereign 4, Vanguard 3, Defiance 3, Swift 2 — thematic labels, not a claim to reproduce the historical fleet. | **Approved by Alex** |
+| D9 | 2026-09-30 | Opponent ships (Alex asked Devin to choose five distinct period-appropriate names): Santísima Trinidad 5, Bucentaure 4, Redoutable 3, Santa Ana 3, Argonaute 2. Thematic labels only. | Chosen by Devin at Alex's request — awaiting Alex's review |
+| D10 | 2026-09-30 | Themed messages, e.g. "Royal Navy’s turn", "Franco-Spanish Fleet is firing", "Enemy ship sunk", "Royal Navy victory", "Your fleet has been defeated". | **Approved by Alex** |
+| D11 | 2026-09-30 | Visual style: navy blue, parchment/cream, restrained brass accents, clear coordinates, simple ship silhouettes; no elaborate animations or new dependencies. Replaces "navy and white, restrained radar styling". This is a visual/wording change only — gameplay, acceptance, accessibility and testing requirements unchanged. | **Approved by Alex** |
 
 ## Questions raised by Alex
 

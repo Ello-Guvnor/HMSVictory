@@ -30,3 +30,17 @@ Clarifications and tradeoffs live in DECISIONS.md, not here.
 > Capture useful screenshots and test recordings as we go. Do not turn on recurring automation or paid cloud infrastructure just to satisfy a screenshot checklist.
 
 > Keep the game static, simple, and reliable. Use my own new repository and preserve my existing flight simulator. Tell me exactly which account setup steps I need to perform, one at a time. Do not send any email or submit my interview
+
+## 3. Theme amendment (Alex, verbatim, 2026-09-30)
+
+This amendment supersedes the naming and styling wording in section 1 ("Spanish Armada", “The Royal Navy — Built with Devin, captained by Alex.”, "navy and white, restrained radar styling"). All gameplay rules, acceptance criteria, accessibility and testing requirements in section 1 still apply.
+
+> The game is called “HMS Victory,” with the subtitle “Built with Devin, captained by Alex.” Use a Trafalgar-inspired Royal Navy versus Franco-Spanish Fleet theme.
+> Apply these changes consistently:
+> - Human board: “Royal Navy Fleet.”
+> - Computer board: “Franco-Spanish Fleet.”
+> - Replace any remaining “Fleet Command” or “Spanish Armada” wording.
+> - Name the human ships Victory, Sovereign, Vanguard, Defiance, and Swift, with lengths 5, 4, 3, 3, and 2 respectively. These are thematic game labels, not a claim to reproduce the historical fleet. Give the opponent five distinct period-appropriate names with the same lengths.
+> - Use clear themed messages such as “Royal Navy’s turn,” “Franco-Spanish Fleet is firing,” “Enemy ship sunk,” “Royal Navy victory,” and “Your fleet has been defeated.”
+> - Keep the interface readable: navy blue, parchment or cream, restrained brass accents, clear coordinates, and simple ship silhouettes. Avoid elaborate animations or new dependencies.
+> Preserve all existing gameplay rules, acceptance criteria, accessibility requirements, and testing requirements. This is a visual and wording change, not a change to game mechanics.
