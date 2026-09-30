@@ -29,6 +29,12 @@ The rules are in `src/engine.js`, which contains no page code, so they can be te
 npm test        # same as: node --test
 ```
 
+Development-only browser check (needs Google Chrome and the local server running). It confirms the square under the pointer shows the same placement preview colour as the rest of the preview:
+
+```sh
+node tools/check-hover-preview.mjs http://localhost:8000
+```
+
 ## Files
 
 - `index.html`, `styles.css`: the page and its styling
@@ -36,6 +42,7 @@ npm test        # same as: node --test
 - `src/rng.js`: seeded random numbers, so tests can be repeated exactly
 - `src/ui.js`: connects the rules to the page
 - `tests/`: automated tests
+- `tools/`: development-only checks (not part of the game)
 
 ## Project records
 
