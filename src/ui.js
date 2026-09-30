@@ -57,10 +57,10 @@ const enemyCells = buildBoard(el.enemyBoard, 'enemy');
 
 function buildBoard(container, side) {
   const cells = [];
-  container.append(axisCell(''));
-  for (let col = 0; col < BOARD_SIZE; col += 1) container.append(axisCell(String(col + 1)));
+  container.append(axisCell('', 1, 1));
+  for (let col = 0; col < BOARD_SIZE; col += 1) container.append(axisCell(String(col + 1), 1, col + 2));
   for (let row = 0; row < BOARD_SIZE; row += 1) {
-    container.append(axisCell(ROW_LABELS[row]));
+    container.append(axisCell(ROW_LABELS[row], row + 2, 1));
     const rowCells = [];
     for (let col = 0; col < BOARD_SIZE; col += 1) {
       const button = document.createElement('button');
@@ -70,6 +70,7 @@ function buildBoard(container, side) {
       button.dataset.col = String(col);
       button.dataset.side = side;
       button.tabIndex = -1;
+      button.style.gridArea = `${row + 2} / ${col + 2}`;
       container.append(button);
       rowCells.push(button);
     }
@@ -78,11 +79,12 @@ function buildBoard(container, side) {
   return cells;
 }
 
-function axisCell(text) {
+function axisCell(text, gridRow, gridColumn) {
   const div = document.createElement('div');
   div.className = 'axis';
   div.textContent = text;
   div.setAttribute('aria-hidden', 'true');
+  div.style.gridArea = `${gridRow} / ${gridColumn}`;
   return div;
 }
 

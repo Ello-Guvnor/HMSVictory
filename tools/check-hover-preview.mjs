@@ -1,5 +1,6 @@
 // Development-only browser check (needs Google Chrome). Not shipped with the game.
-// Verifies the square under the pointer shows the same preview colour as the rest of the preview.
+// Verifies the square under the pointer shows the same preview colour as the rest of the preview,
+// and that board squares stay under their coordinate labels once ship drawings are on the board.
 // Usage: node tools/check-hover-preview.mjs [baseUrl]   (default http://localhost:8000)
 import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -52,6 +53,25 @@ try {
     if (!ok) failures += 1;
     console.log(`${ok ? 'PASS' : 'FAIL'} ${c.label}: hovered=${info.hovered} ${c.expectClass}=${info.hasClass} hovered-bg=${info.bg} neighbour-bg=${info.neighbourBg}`);
   }
+
+  const alignment = await evaluate(`(() => {
+    document.getElementById('random-btn').click();
+    const board = document.getElementById('player-board');
+    const axes = board.querySelectorAll('.axis');
+    const misplaced = [];
+    for (const cell of board.querySelectorAll('.cell')) {
+      const row = Number(cell.dataset.row), col = Number(cell.dataset.col);
+      const r = cell.getBoundingClientRect();
+      const colX = axes[1 + col].getBoundingClientRect().left;
+      const rowY = axes[11 + row].getBoundingClientRect().top;
+      if (Math.abs(r.left - colX) > 1 || Math.abs(r.top - rowY) > 1) misplaced.push(String.fromCharCode(65 + row) + (col + 1));
+    }
+    const art = board.querySelectorAll('.ship-art').length;
+    return { art, misplaced };
+  })()`);
+  const aligned = alignment.art === 5 && alignment.misplaced.length === 0;
+  if (!aligned) failures += 1;
+  console.log(`${aligned ? 'PASS' : 'FAIL'} squares under labels after Random placement: ship drawings=${alignment.art} misplaced=${alignment.misplaced.length}${alignment.misplaced.length ? ` (${alignment.misplaced.slice(0, 8).join(' ')}...)` : ''}`);
   ws.close();
 } finally {
   const exited = new Promise((r) => chrome.once('exit', r));
