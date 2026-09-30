@@ -142,7 +142,11 @@ function renderPlayerBoard() {
       if (previewKeys.has(`${row},${col}`)) {
         button.classList.add(preview.ok ? 'preview-ok' : 'preview-bad');
       }
-      if (placing) label += `. Place ${next.name} here, ${orientationWord(state.orientation)}`;
+      if (placing) {
+        const check = validatePlacement(state.player, next, row, col, state.orientation);
+        label += `. ${next.name} here, ${orientationWord(state.orientation)}: `;
+        label += check.ok ? 'allowed' : `not allowed, ${describeRejection(next, check)}`;
+      }
       button.setAttribute('aria-label', label);
       button.disabled = !placing;
       button.tabIndex = placing && row === state.focus.row && col === state.focus.col ? 0 : -1;
