@@ -39,6 +39,16 @@ Only defects actually observed are logged here. Each entry has: reproduction ste
 - Regression test: manual only. After the fix, one run left 0 `hms-check-*` folders. Affects only the development tool, not the game.
 - Verifying commit: `cd1611b`.
 
+### B4 — Placing a ship shifted the board squares away from their coordinates
+- Found: 2026-09-30, Milestone 1, browser test run by Devin's testing agent on commit `11c4b74` (the commit that added the warship drawings).
+- Steps to reproduce: open `/?seed=42`, place Victory at A1 horizontally (or press Random placement).
+- Expected: every square stays under its coordinate labels; the ship drawing sits exactly on the ship's squares.
+- Actual (11c4b74): the Victory drawing sat on A1–A5, but the clickable A1–A5 squares moved to columns 6–10 and every later square and row label shifted along. Clicks and the red overlap preview therefore landed away from the drawing.
+- Cause: the board is a CSS grid. The ship drawings were given fixed grid positions while squares and labels were placed automatically, so the browser flowed the squares around the drawings.
+- Fix (`4b9b7c8`): every square and label is given its own fixed row and column.
+- Regression test: `node tools/check-hover-preview.mjs http://localhost:8000` now also presses Random placement and checks that all 100 squares sit under their row and column labels. Actual results: `11c4b74` FAIL (99 squares misplaced); `4b9b7c8` PASS (0 misplaced).
+- Verifying commit: `4b9b7c8`.
+
 <!-- Template
 ### B<n> — short title
 - Found: date, milestone, how (test / manual check / review)
