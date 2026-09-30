@@ -14,6 +14,7 @@ import {
   placeShip,
   nextUnplacedShip,
   isFleetComplete,
+  validateFleet,
   randomFleet,
 } from '../src/engine.js';
 import { createRng } from '../src/rng.js';
@@ -162,8 +163,12 @@ function assertLegalFleet(board, fleet) {
 
 test('random placement always produces a legal fleet (1,000 seeds per fleet)', () => {
   for (let seed = 1; seed <= 1000; seed += 1) {
-    assertLegalFleet(randomFleet(ROYAL_NAVY_FLEET, createRng(seed)), ROYAL_NAVY_FLEET);
-    assertLegalFleet(randomFleet(FRANCO_SPANISH_FLEET, createRng(seed)), FRANCO_SPANISH_FLEET);
+    const royal = randomFleet(ROYAL_NAVY_FLEET, createRng(seed));
+    const enemy = randomFleet(FRANCO_SPANISH_FLEET, createRng(seed));
+    assertLegalFleet(royal, ROYAL_NAVY_FLEET);
+    assertLegalFleet(enemy, FRANCO_SPANISH_FLEET);
+    assert.equal(validateFleet(royal, ROYAL_NAVY_FLEET).ok, true);
+    assert.equal(validateFleet(enemy, FRANCO_SPANISH_FLEET).ok, true);
   }
 });
 
@@ -184,4 +189,76 @@ test('random placement uses both orientations', () => {
     for (const ship of randomFleet(ROYAL_NAVY_FLEET, createRng(seed)).ships) orientations.add(ship.orientation);
   }
   assert.deepEqual([...orientations].sort(), [HORIZONTAL, VERTICAL]);
+});
+
+test('a full fleet can be placed flush against all four edges and is valid', () => {
+  let board = mustPlace(createBoard(), victory, 0, 2, HORIZONTAL); // top edge A3-A7
+  board = mustPlace(board, sovereign, 9, 6, HORIZONTAL); // bottom edge J7-J10
+  board = mustPlace(board, vanguard, 3, 0, VERTICAL); // left edge D1-F1
+  board = mustPlace(board, defiance, 4, 9, VERTICAL); // right edge E10-G10
+  board = mustPlace(board, swift, 5, 4, HORIZONTAL);
+  assert.deepEqual(validateFleet(board, ROYAL_NAVY_FLEET), { ok: true });
+});
+
+test('rotating near a corner: legal one way, refused the other way', () => {
+  const empty = createBoard();
+  assert.equal(validatePlacement(empty, victory, 9, 0, HORIZONTAL).ok, true); // J1-J5
+  assert.equal(validatePlacement(empty, victory, 9, 0, VERTICAL).reason, 'off-board');
+  assert.equal(validatePlacement(empty, victory, 0, 9, VERTICAL).ok, true); // A10-E10
+  assert.equal(validatePlacement(empty, victory, 0, 9, HORIZONTAL).reason, 'off-board');
+  assert.equal(validatePlacement(empty, swift, 9, 9, HORIZONTAL).reason, 'off-board');
+  assert.equal(validatePlacement(empty, swift, 9, 9, VERTICAL).reason, 'off-board');
+  assert.equal(validatePlacement(empty, swift, 8, 8, HORIZONTAL).ok, true);
+  assert.equal(validatePlacement(empty, swift, 8, 8, VERTICAL).ok, true);
+});
+
+function legalRoyalFleet() {
+  return randomFleet(ROYAL_NAVY_FLEET, createRng(7));
+}
+
+function withShip(board, id, changes) {
+  return { ships: board.ships.map((ship) => (ship.id === id ? { ...ship, ...changes } : ship)) };
+}
+
+test('Start check: an incomplete fleet is not valid', () => {
+  const board = mustPlace(createBoard(), victory, 0, 0, HORIZONTAL);
+  const result = validateFleet(board, ROYAL_NAVY_FLEET);
+  assert.equal(result.ok, false);
+  assert.equal(result.problems.length, 4);
+  assert.equal(validateFleet(createBoard(), ROYAL_NAVY_FLEET).ok, false);
+});
+
+test('Start check: wrong ship lengths are not valid', () => {
+  const board = legalRoyalFleet();
+  const swiftShip = board.ships.find((s) => s.id === 'swift');
+  const shortened = withShip(board, 'swift', { length: 1, cells: swiftShip.cells.slice(0, 1) });
+  assert.deepEqual(validateFleet(shortened, ROYAL_NAVY_FLEET).problems, ['Swift must be 2 squares long']);
+  const mislabelled = withShip(board, 'swift', { length: 3 });
+  assert.equal(validateFleet(mislabelled, ROYAL_NAVY_FLEET).ok, false);
+});
+
+test('Start check: ships off the board, overlapping, broken or bent are not valid', () => {
+  const base = { ships: [] };
+  const fleet = [victory, swift];
+  const victoryShip = { id: 'victory', name: 'Victory', length: 5, orientation: HORIZONTAL, cells: shipCells(0, 0, 5, HORIZONTAL) };
+  const ok = { ships: [victoryShip, { id: 'swift', name: 'Swift', length: 2, orientation: VERTICAL, cells: shipCells(1, 0, 2, VERTICAL) }] };
+  assert.equal(validateFleet(ok, fleet).ok, true);
+  const offBoard = { ships: [victoryShip, { id: 'swift', name: 'Swift', length: 2, orientation: VERTICAL, cells: shipCells(9, 9, 2, VERTICAL) }] };
+  assert.deepEqual(validateFleet(offBoard, fleet).problems, ['Swift runs off the board']);
+  const overlap = { ships: [victoryShip, { id: 'swift', name: 'Swift', length: 2, orientation: VERTICAL, cells: shipCells(0, 2, 2, VERTICAL) }] };
+  assert.deepEqual(validateFleet(overlap, fleet).problems, ['Swift overlaps Victory at A3']);
+  const gap = { ships: [victoryShip, { id: 'swift', name: 'Swift', length: 2, orientation: HORIZONTAL, cells: [{ row: 5, col: 0 }, { row: 5, col: 2 }] }] };
+  assert.deepEqual(validateFleet(gap, fleet).problems, ['Swift must be one straight, unbroken line']);
+  const bent = { ships: [victoryShip, { id: 'swift', name: 'Swift', length: 2, orientation: 'diagonal', cells: [{ row: 5, col: 0 }, { row: 6, col: 1 }] }] };
+  assert.equal(validateFleet(bent, fleet).ok, false);
+  assert.equal(validateFleet(base, fleet).ok, false);
+});
+
+test('Start check: duplicate or foreign ships are not valid', () => {
+  const board = legalRoyalFleet();
+  const swiftShip = board.ships.find((s) => s.id === 'swift');
+  const duplicated = { ships: [...board.ships, swiftShip] };
+  assert.ok(validateFleet(duplicated, ROYAL_NAVY_FLEET).problems.includes('Swift is placed more than once'));
+  const foreign = { ships: [...board.ships, { ...randomFleet(FRANCO_SPANISH_FLEET, createRng(1)).ships[0] }] };
+  assert.ok(validateFleet(foreign, ROYAL_NAVY_FLEET).problems.includes('Santísima Trinidad is not part of this fleet'));
 });

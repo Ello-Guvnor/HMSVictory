@@ -81,6 +81,46 @@ export function isFleetComplete(board, fleet) {
   return fleet.every((spec) => board.ships.some((ship) => ship.id === spec.id));
 }
 
+export function validateFleet(board, fleet) {
+  const problems = [];
+  const occupied = new Map();
+  for (const spec of fleet) {
+    const matches = board.ships.filter((ship) => ship.id === spec.id);
+    if (matches.length === 0) problems.push(`${spec.name} is not placed`);
+    if (matches.length > 1) problems.push(`${spec.name} is placed more than once`);
+  }
+  for (const ship of board.ships) {
+    const spec = fleet.find((s) => s.id === ship.id);
+    if (!spec) {
+      problems.push(`${ship.name ?? ship.id} is not part of this fleet`);
+      continue;
+    }
+    const cells = ship.cells ?? [];
+    if (ship.length !== spec.length || cells.length !== spec.length) {
+      problems.push(`${spec.name} must be ${spec.length} squares long`);
+      continue;
+    }
+    const [first] = cells;
+    const expected = shipCells(first.row, first.col, spec.length, ship.orientation);
+    const straight = (ship.orientation === HORIZONTAL || ship.orientation === VERTICAL)
+      && expected.every((c, i) => c.row === cells[i].row && c.col === cells[i].col);
+    if (!straight) {
+      problems.push(`${spec.name} must be one straight, unbroken line`);
+      continue;
+    }
+    if (!cells.every((c) => isOnBoard(c.row, c.col))) {
+      problems.push(`${spec.name} runs off the board`);
+      continue;
+    }
+    for (const c of cells) {
+      const key = `${c.row},${c.col}`;
+      if (occupied.has(key)) problems.push(`${spec.name} overlaps ${occupied.get(key)} at ${coordLabel(c.row, c.col)}`);
+      else occupied.set(key, spec.name);
+    }
+  }
+  return problems.length ? { ok: false, problems } : { ok: true };
+}
+
 const MAX_ATTEMPTS_PER_SHIP = 500;
 const MAX_RESTARTS = 50;
 
@@ -103,7 +143,7 @@ export function randomFleet(fleet, rng) {
       }
       if (!placed) break;
     }
-    if (isFleetComplete(board, fleet)) {
+    if (validateFleet(board, fleet).ok) {
       return board;
     }
   }

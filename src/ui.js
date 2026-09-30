@@ -13,7 +13,7 @@ import {
   validatePlacement,
   placeShip,
   nextUnplacedShip,
-  isFleetComplete,
+  validateFleet,
   randomFleet,
 } from './engine.js';
 import { createRng } from './rng.js';
@@ -204,7 +204,7 @@ function renderControls() {
   el.rotate.disabled = !placing;
   el.random.disabled = !placing;
   el.clear.disabled = !placing;
-  el.start.disabled = !placing || !isFleetComplete(state.player, ROYAL_NAVY_FLEET);
+  el.start.disabled = !placing || !validateFleet(state.player, ROYAL_NAVY_FLEET).ok;
 }
 
 function render() {
@@ -321,7 +321,7 @@ el.clear.addEventListener('click', () => {
 });
 
 el.start.addEventListener('click', () => {
-  if (state.phase !== PLACEMENT || !isFleetComplete(state.player, ROYAL_NAVY_FLEET)) return;
+  if (state.phase !== PLACEMENT || !validateFleet(state.player, ROYAL_NAVY_FLEET).ok) return;
   state.phase = DEPLOYED;
   state.hover = null;
   render();
