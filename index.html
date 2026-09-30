@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HMS Victory — Built with Devin, captained by Alex</title>
+  <meta name="description" content="HMS Victory: a Trafalgar-inspired Battleship game. Royal Navy Fleet versus Franco-Spanish Fleet.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="masthead">
+    <h1>HMS Victory</h1>
+    <p class="subtitle">Built with Devin, captained by Alex.</p>
+  </header>
+
+  <main>
+    <section class="orders" aria-labelledby="orders-heading">
+      <h2 id="orders-heading">Orders</h2>
+      <ol class="instructions">
+        <li>Click a square on the <strong>Royal Navy Fleet</strong> board to place the ship marked <em>Next</em>. Ships run right or down from that square.</li>
+        <li>Press <strong>Rotate</strong> (or the <kbd>R</kbd> key) to switch between horizontal and vertical.</li>
+        <li>Or press <strong>Random placement</strong>. <strong>Start battle</strong> unlocks once all five ships are placed.</li>
+      </ol>
+      <div class="controls">
+        <button type="button" id="rotate-btn">Rotate (R): Horizontal</button>
+        <button type="button" id="random-btn">Random placement</button>
+        <button type="button" id="clear-btn">Clear fleet</button>
+        <button type="button" id="start-btn" class="primary" disabled>Start battle</button>
+      </div>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+    </section>
+
+    <div class="boards">
+      <section class="board-panel" aria-labelledby="player-heading">
+        <h2 id="player-heading">Royal Navy Fleet</h2>
+        <p class="board-caption">Your ships</p>
+        <div class="board" id="player-board" role="group" aria-labelledby="player-heading"></div>
+        <ul class="roster" id="player-roster" aria-label="Royal Navy ships"></ul>
+      </section>
+
+      <section class="board-panel" aria-labelledby="enemy-heading">
+        <h2 id="enemy-heading">Franco-Spanish Fleet</h2>
+        <p class="board-caption">Enemy waters — positions hidden</p>
+        <div class="board enemy" id="enemy-board" role="group" aria-labelledby="enemy-heading"></div>
+        <ul class="roster" id="enemy-roster" aria-label="Franco-Spanish ships"></ul>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>Opponent: a computer strategy, not an AI or LLM. Ship names are thematic labels, not a historical record.</p>
+  </footer>
+
+  <script type="module" src="src/ui.js"></script>
+</body>
+</html>
