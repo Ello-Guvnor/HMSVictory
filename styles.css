@@ -141,7 +141,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   height: 100%;
 }
 
-.cell:hover:not(:disabled):not(.preview-ok):not(.preview-bad) { background-color: #24477a; }
+.cell:hover:not(:disabled):not(.preview-ok):not(.preview-bad):not(.ship) { background-color: #24477a; }
 
 .cell:focus-visible { outline-offset: -3px; z-index: 1; }
 
