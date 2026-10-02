@@ -16,11 +16,14 @@ import {
   validateFleet,
   randomFleet,
 } from './engine.js';
+import { ROYAL_NAVY, FRANCO_SPANISH, MISS, HIT, SUNK, shotAt, isShipSunk } from './game.js';
+import { createBattle } from './battle.js';
 import { createRng } from './rng.js';
 import { ENEMY_NATIONS, flagSvg, shipProfileSvg, shipTopSvg } from './art.js';
 
 const PLACEMENT = 'placement';
-const DEPLOYED = 'deployed';
+const BATTLE = 'battle';
+const OVER = 'over';
 
 const params = new URLSearchParams(window.location.search);
 const seedParam = Number.parseInt(params.get('seed') ?? '', 10);
@@ -32,22 +35,31 @@ const el = {
   playerRoster: document.getElementById('player-roster'),
   enemyRoster: document.getElementById('enemy-roster'),
   status: document.getElementById('status'),
+  turn: document.getElementById('turn'),
+  log: document.getElementById('shot-log'),
   rotate: document.getElementById('rotate-btn'),
   random: document.getElementById('random-btn'),
   clear: document.getElementById('clear-btn'),
   start: document.getElementById('start-btn'),
+  restart: document.getElementById('restart-btn'),
 };
 
-const state = {
-  phase: PLACEMENT,
-  player: createBoard(),
-  enemy: randomFleet(FRANCO_SPANISH_FLEET, rng),
-  orientation: HORIZONTAL,
-  hover: null,
-  focus: { row: 0, col: 0 },
-  inputMode: 'keyboard',
-  pointerOverBoard: false,
-};
+function freshState() {
+  return {
+    phase: PLACEMENT,
+    player: createBoard(),
+    enemy: randomFleet(FRANCO_SPANISH_FLEET, rng),
+    orientation: HORIZONTAL,
+    hover: null,
+    focus: { row: 0, col: 0 },
+    enemyFocus: { row: 0, col: 0 },
+    inputMode: 'keyboard',
+    pointerOverBoard: false,
+  };
+}
+
+let state = freshState();
+let battle = null;
 
 document.getElementById('player-flags').innerHTML = flagSvg('white-ensign');
 document.getElementById('enemy-flags').innerHTML = flagSvg('french') + flagSvg('spanish');
@@ -122,16 +134,22 @@ function describeRejection(spec, result) {
   return `${spec.name} cannot be placed there.`;
 }
 
+function resultWord(result) {
+  return result === MISS ? 'miss' : result === HIT ? 'hit' : 'hit, ship sunk';
+}
+
 function renderPlayerBoard() {
   const preview = previewCells();
   const previewKeys = new Set(preview ? preview.cells.map((c) => `${c.row},${c.col}`) : []);
   const next = nextUnplacedShip(state.player, ROYAL_NAVY_FLEET);
   const placing = state.phase === PLACEMENT && next !== null;
+  const game = battle?.game ?? null;
 
   for (let row = 0; row < BOARD_SIZE; row += 1) {
     for (let col = 0; col < BOARD_SIZE; col += 1) {
       const button = playerCells[row][col];
       const ship = shipAt(state.player, row, col);
+      const incoming = game ? shotAt(game, FRANCO_SPANISH, row, col) : null;
       button.className = 'cell';
       button.replaceChildren();
       let label = coordLabel(row, col);
@@ -141,6 +159,12 @@ function renderPlayerBoard() {
         label += `, ${ship.name}${index === 0 ? ' (bow)' : ''}`;
       } else {
         label += ', open water';
+      }
+      if (incoming) {
+        const sunk = ship && isShipSunk(game, ROYAL_NAVY, ship);
+        button.classList.add(incoming.result === MISS ? 'miss' : 'hit');
+        if (sunk) button.classList.add('sunk');
+        label += incoming.result === MISS ? ', enemy shot missed' : sunk ? ', hit, sunk' : ', hit';
       }
       if (previewKeys.has(`${row},${col}`)) {
         button.classList.add(preview.ok ? 'preview-ok' : 'preview-bad');
@@ -155,36 +179,57 @@ function renderPlayerBoard() {
       button.tabIndex = placing && row === state.focus.row && col === state.focus.col ? 0 : -1;
     }
   }
-  renderShipArt();
+  renderShipArt(el.playerBoard, state.player.ships, () => 'royal');
 }
 
-let drawnShipsKey = '';
+const drawnShipKeys = new WeakMap();
 
-function renderShipArt() {
-  const key = JSON.stringify(state.player.ships.map((ship) => [ship.id, ship.orientation, ship.cells[0]]));
-  if (key === drawnShipsKey) return;
-  drawnShipsKey = key;
-  el.playerBoard.querySelectorAll('.ship-art').forEach((node) => node.remove());
-  for (const ship of state.player.ships) {
+function renderShipArt(boardEl, ships, nationOf) {
+  const key = JSON.stringify(ships.map((ship) => [ship.id, ship.orientation, ship.cells[0]]));
+  if (drawnShipKeys.get(boardEl) === key) return;
+  drawnShipKeys.set(boardEl, key);
+  boardEl.querySelectorAll('.ship-art').forEach((node) => node.remove());
+  for (const ship of ships) {
     const { row, col } = ship.cells[0];
     const art = document.createElement('div');
     art.className = 'ship-art';
     art.setAttribute('aria-hidden', 'true');
     art.style.gridRow = `${row + 2} / span ${ship.orientation === VERTICAL ? ship.length : 1}`;
     art.style.gridColumn = `${col + 2} / span ${ship.orientation === HORIZONTAL ? ship.length : 1}`;
-    art.innerHTML = shipTopSvg(ship.length, 'royal', ship.orientation);
-    el.playerBoard.append(art);
+    art.innerHTML = shipTopSvg(ship.length, nationOf(ship), ship.orientation);
+    boardEl.append(art);
   }
 }
 
 function renderEnemyBoard() {
+  const game = battle?.game ?? null;
+  const active = state.phase === BATTLE || state.phase === OVER;
+  const holdFire = active && game.turn !== ROYAL_NAVY;
+  const sunk = game ? state.enemy.ships.filter((ship) => isShipSunk(game, FRANCO_SPANISH, ship)) : [];
+  el.enemyBoard.classList.toggle('waiting', holdFire);
   for (let row = 0; row < BOARD_SIZE; row += 1) {
     for (let col = 0; col < BOARD_SIZE; col += 1) {
       const button = enemyCells[row][col];
-      button.disabled = true;
-      button.setAttribute('aria-label', `${coordLabel(row, col)}, unexplored`);
+      const shot = game ? shotAt(game, ROYAL_NAVY, row, col) : null;
+      const sunkShip = sunk.find((ship) => ship.cells.some((c) => c.row === row && c.col === col));
+      button.className = 'cell';
+      let label = coordLabel(row, col);
+      if (sunkShip) {
+        button.classList.add('hit', 'sunk', 'ship');
+        label += `, hit, ${sunkShip.name} sunk`;
+      } else if (shot) {
+        button.classList.add(shot.result === MISS ? 'miss' : 'hit');
+        label += `, ${resultWord(shot.result)}`;
+      } else {
+        label += ', unexplored';
+      }
+      button.setAttribute('aria-label', label);
+      button.disabled = !active;
+      button.setAttribute('aria-disabled', String(holdFire));
+      button.tabIndex = active && row === state.enemyFocus.row && col === state.enemyFocus.col ? 0 : -1;
     }
   }
+  renderShipArt(el.enemyBoard, sunk, (ship) => ENEMY_NATIONS[ship.id]);
 }
 
 function profile(length, nation) {
@@ -194,9 +239,9 @@ function profile(length, nation) {
   return span;
 }
 
-function rosterItem(name, length, nation, stateText, isNext) {
+function rosterItem(name, length, nation, stateText, classes) {
   const li = document.createElement('li');
-  if (isNext) li.classList.add('next');
+  li.classList.add(...classes);
   const nameSpan = document.createElement('span');
   nameSpan.textContent = `${name} (${length})`;
   const stateSpan = document.createElement('span');
@@ -207,17 +252,76 @@ function rosterItem(name, length, nation, stateText, isNext) {
 }
 
 function renderRosters() {
+  const game = battle?.game ?? null;
   const next = state.phase === PLACEMENT ? nextUnplacedShip(state.player, ROYAL_NAVY_FLEET) : null;
   el.playerRoster.replaceChildren(
     ...ROYAL_NAVY_FLEET.map((spec) => {
-      const placed = state.player.ships.some((s) => s.id === spec.id);
+      const ship = state.player.ships.find((s) => s.id === spec.id);
+      if (game && ship) {
+        const hits = ship.cells.filter((c) => shotAt(game, FRANCO_SPANISH, c.row, c.col)).length;
+        const sunk = hits === ship.length;
+        const text = sunk ? '✕ Sunk' : hits ? `Hit ${hits}/${ship.length}` : 'Afloat';
+        return rosterItem(spec.name, spec.length, 'royal', text, sunk ? ['sunk'] : []);
+      }
       const isNext = next?.id === spec.id;
-      return rosterItem(spec.name, spec.length, 'royal', placed ? 'Placed' : isNext ? 'Next' : 'To place', isNext);
+      return rosterItem(spec.name, spec.length, 'royal', ship ? 'Placed' : isNext ? 'Next' : 'To place', isNext ? ['next'] : []);
     }),
   );
   el.enemyRoster.replaceChildren(
-    ...FRANCO_SPANISH_FLEET.map((spec) => rosterItem(spec.name, spec.length, ENEMY_NATIONS[spec.id], 'Hidden', false)),
+    ...FRANCO_SPANISH_FLEET.map((spec) => {
+      const ship = state.enemy.ships.find((s) => s.id === spec.id);
+      const sunk = game && isShipSunk(game, FRANCO_SPANISH, ship);
+      const text = !game ? 'Hidden' : sunk ? '✕ Sunk' : 'Afloat';
+      return rosterItem(spec.name, spec.length, ENEMY_NATIONS[spec.id], text, sunk ? ['sunk'] : []);
+    }),
   );
+}
+
+function renderTurn() {
+  const game = battle?.game ?? null;
+  el.turn.classList.remove('ours', 'theirs', 'won', 'lost');
+  if (!game) {
+    el.turn.textContent = 'Placing the Royal Navy Fleet';
+  } else if (game.winner === ROYAL_NAVY) {
+    el.turn.textContent = '⚓ Royal Navy victory';
+    el.turn.classList.add('won');
+  } else if (game.winner === FRANCO_SPANISH) {
+    el.turn.textContent = '✕ Your fleet has been defeated';
+    el.turn.classList.add('lost');
+  } else if (game.turn === ROYAL_NAVY) {
+    el.turn.textContent = '▶ Royal Navy’s turn';
+    el.turn.classList.add('ours');
+  } else {
+    el.turn.textContent = '… Franco-Spanish Fleet is firing';
+    el.turn.classList.add('theirs');
+  }
+}
+
+function logEntryText(shot) {
+  const who = shot.shooter === ROYAL_NAVY ? 'Royal Navy' : 'Franco-Spanish';
+  let text = `${shot.number}. ${who} → ${shot.coord}: ${shot.result === MISS ? '• miss' : '✕ hit'}`;
+  if (shot.result === SUNK) text += ` — ${shot.sunkShip} sunk`;
+  return text;
+}
+
+function renderLog() {
+  const history = battle?.game.history ?? [];
+  if (history.length === 0) {
+    const li = document.createElement('li');
+    li.className = 'empty';
+    li.textContent = 'No shots fired yet.';
+    el.log.replaceChildren(li);
+    return;
+  }
+  el.log.replaceChildren(
+    ...history.map((shot) => {
+      const li = document.createElement('li');
+      li.className = shot.shooter === ROYAL_NAVY ? 'ours' : 'theirs';
+      li.textContent = logEntryText(shot);
+      return li;
+    }),
+  );
+  el.log.scrollTop = el.log.scrollHeight;
 }
 
 function renderControls() {
@@ -227,12 +331,15 @@ function renderControls() {
   el.random.disabled = !placing;
   el.clear.disabled = !placing;
   el.start.disabled = !placing || !validateFleet(state.player, ROYAL_NAVY_FLEET).ok;
+  el.restart.disabled = placing;
 }
 
 function render() {
   renderPlayerBoard();
   renderEnemyBoard();
   renderRosters();
+  renderTurn();
+  renderLog();
   renderControls();
 }
 
@@ -279,6 +386,82 @@ function moveFocus(dRow, dCol) {
   playerCells[row][col].focus();
 }
 
+function moveEnemyFocus(dRow, dCol) {
+  const row = Math.min(BOARD_SIZE - 1, Math.max(0, state.enemyFocus.row + dRow));
+  const col = Math.min(BOARD_SIZE - 1, Math.max(0, state.enemyFocus.col + dCol));
+  state.enemyFocus = { row, col };
+  renderEnemyBoard();
+  enemyCells[row][col].focus();
+}
+
+function afterShotMessage(shot, game) {
+  const mine = shot.shooter === ROYAL_NAVY;
+  let message;
+  if (mine) {
+    message = shot.result === SUNK
+      ? `Enemy ship sunk: ${shot.sunkShip}!`
+      : `You fired at ${shot.coord}: ${shot.result}.`;
+  } else {
+    const ship = shipAt(state.player, shot.row, shot.col);
+    message = shot.result === SUNK
+      ? `Franco-Spanish Fleet fired at ${shot.coord} and sank ${shot.sunkShip}.`
+      : `Franco-Spanish Fleet fired at ${shot.coord}: ${shot.result === HIT ? `hit on ${ship.name}` : 'miss'}.`;
+  }
+  if (game.winner === ROYAL_NAVY) return `${message} Royal Navy victory — the Franco-Spanish Fleet is destroyed. Press Restart to play again.`;
+  if (game.winner === FRANCO_SPANISH) return `${message} Your fleet has been defeated. Press Restart to play again.`;
+  return `${message} ${game.turn === ROYAL_NAVY ? 'Royal Navy’s turn.' : 'Franco-Spanish Fleet is firing…'}`;
+}
+
+function onComputerShot({ shot, game }) {
+  if (game.winner) state.phase = OVER;
+  render();
+  setStatus(afterShotMessage(shot, game));
+}
+
+function playerFireAt(row, col) {
+  if (!battle) return;
+  state.enemyFocus = { row, col };
+  const outcome = battle.playerFire(row, col);
+  if (!outcome.ok) {
+    renderEnemyBoard();
+    if (outcome.reason === 'repeat') setStatus(`You have already fired at ${outcome.coord}. Choose another square — it is still your turn.`, true);
+    else if (outcome.reason === 'not-your-turn') setStatus('Hold fire — the Franco-Spanish Fleet is firing.', true);
+    else if (outcome.reason === 'game-over') setStatus('The battle is over. Press Restart to play again.', true);
+    return;
+  }
+  if (outcome.game.winner) state.phase = OVER;
+  render();
+  setStatus(afterShotMessage(outcome.shot, outcome.game));
+}
+
+function startBattle() {
+  if (state.phase !== PLACEMENT || !validateFleet(state.player, ROYAL_NAVY_FLEET).ok) return;
+  battle = createBattle({
+    royalNavy: state.player,
+    francoSpanish: state.enemy,
+    rng,
+    schedule: (fn, ms) => window.setTimeout(fn, ms),
+    cancel: (id) => window.clearTimeout(id),
+    onComputerShot,
+  });
+  state.phase = BATTLE;
+  state.hover = null;
+  state.enemyFocus = { row: 0, col: 0 };
+  render();
+  setStatus('Battle stations! Royal Navy’s turn — fire at a square on the Franco-Spanish Fleet board.');
+  enemyCells[0][0].focus();
+}
+
+function restart() {
+  if (state.phase === PLACEMENT) return;
+  battle?.dispose();
+  battle = null;
+  state = freshState();
+  render();
+  promptNextShip();
+  el.random.focus();
+}
+
 el.playerBoard.addEventListener('click', (event) => {
   const button = event.target.closest('.cell');
   if (!button || button.disabled) return;
@@ -286,6 +469,12 @@ el.playerBoard.addEventListener('click', (event) => {
   const col = Number(button.dataset.col);
   state.focus = { row, col };
   tryPlaceAt(row, col);
+});
+
+el.enemyBoard.addEventListener('click', (event) => {
+  const button = event.target.closest('.cell');
+  if (!button || button.disabled) return;
+  playerFireAt(Number(button.dataset.row), Number(button.dataset.col));
 });
 
 el.playerBoard.addEventListener('mouseover', (event) => {
@@ -329,8 +518,15 @@ document.addEventListener('keydown', (event) => {
     state.inputMode = 'keyboard';
     return;
   }
-  if (!ARROW_MOVES[event.key] || state.phase !== PLACEMENT) return;
+  if (!ARROW_MOVES[event.key]) return;
   if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+  if (state.phase !== PLACEMENT) {
+    if (document.activeElement?.closest?.('#enemy-board')) {
+      event.preventDefault();
+      moveEnemyFocus(...ARROW_MOVES[event.key]);
+    }
+    return;
+  }
   const boardFocused = Boolean(document.activeElement?.closest?.('#player-board'));
   if (state.inputMode === 'mouse' && state.pointerOverBoard) {
     event.preventDefault();
@@ -369,13 +565,8 @@ el.clear.addEventListener('click', () => {
   promptNextShip();
 });
 
-el.start.addEventListener('click', () => {
-  if (state.phase !== PLACEMENT || !validateFleet(state.player, ROYAL_NAVY_FLEET).ok) return;
-  state.phase = DEPLOYED;
-  state.hover = null;
-  render();
-  setStatus('Royal Navy Fleet deployed. Firing is not built yet — it arrives in Milestone 2.');
-});
+el.start.addEventListener('click', startBattle);
+el.restart.addEventListener('click', restart);
 
 render();
 promptNextShip();

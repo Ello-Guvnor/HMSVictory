@@ -214,3 +214,59 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   main { padding: 0.5rem; }
   .board-panel { padding: 0.5rem; }
 }
+
+.turn {
+  margin: 0.75rem 0 0;
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  border: 1px solid var(--brass);
+  background: var(--parchment);
+  color: var(--navy);
+  font-weight: bold;
+}
+.turn.ours { background: var(--navy); color: var(--cream); }
+.turn.theirs { background: var(--cream); color: var(--bad); border-style: dashed; }
+.turn.won { background: var(--ok); color: var(--cream); }
+.turn.lost { background: var(--bad); color: var(--cream); }
+
+.board.waiting .cell { cursor: wait; }
+
+.cell.hit::after,
+.cell.miss::after {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  pointer-events: none;
+}
+.cell.miss::after { content: "•"; color: var(--cream); font-size: 1.3rem; }
+.cell.hit::after { content: "✕"; color: #fff1f1; background: rgba(155, 44, 44, 0.55); font-size: 1rem; }
+.cell.sunk { border-color: var(--brass); }
+.cell.sunk::after { background: rgba(90, 20, 20, 0.6); }
+
+.roster li.sunk { text-decoration: line-through; color: var(--bad); }
+.roster li.sunk .ship-state { color: var(--bad); }
+
+.log-panel {
+  margin-top: 1rem;
+  background: var(--cream);
+  border: 1px solid var(--brass);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+}
+.shot-log {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  max-height: 12rem;
+  overflow-y: auto;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.shot-log li.ours { color: var(--navy); }
+.shot-log li.theirs { color: var(--bad); }
+.shot-log li.empty { color: var(--brass-dark); font-style: italic; }
