@@ -40,6 +40,6 @@ _None yet._
 |-----------|----|-------------------|-------|
 | 0 — Spec and plan | https://github.com/Ello-Guvnor/HMSVictory/pull/1 | Pending | Theme amendment added at Alex's request |
 | 1 — Placement | https://github.com/Ello-Guvnor/HMSVictory/pull/2 | **Accepted** (2026-10-02: "Accept Mile Stone 1 - Moving to Mile Stone 2") | Devin Review: 1 flag (fixed, see BUGS.md B2), 0 bugs. Browser testing found B1 (fixed). |
-| 2 — Game rules | PR to follow (branch `devin/1790943284-m2-game-rules`) | Pending | |
+| 2 — Game rules | https://github.com/Ello-Guvnor/HMSVictory/pull/3 | Pending | Browser run found no defects; loss path also checked headless with `?seed=6`. |
 | 3 — Computer strategy | | Pending | |
 | 4 — Release | | Pending | |
