@@ -16,7 +16,7 @@ A milestone is only marked done after Alex accepts it (recorded in DECISIONS.md)
 
 Plan: build the board model and placement rules, the two labelled boards with coordinates, random placement, and click-to-place with a rotate control.
 
-Acceptance criteria (built and verified in PR #2; milestone done only once Alex accepts):
+Acceptance criteria (built and verified in PR #2; **accepted by Alex on 2026-10-02**):
 - [x] Two boards labelled "Royal Navy Fleet" (human) and "Franco-Spanish Fleet" (computer), each 10×10 with A–J / 1–10 coordinates.
 - [x] Each fleet is five ships of lengths 5, 4, 3, 3, 2. Royal Navy: Victory 5, Sovereign 4, Vanguard 3, Defiance 3, Swift 2. Franco-Spanish: Santísima Trinidad 5, Bucentaure 4, Redoutable 3, Santa Ana 3, Argonaute 2.
 - [x] Engine rejects any placement that overlaps another ship or runs off the board; touching ships are allowed. (Automated tests.)
@@ -31,16 +31,18 @@ Acceptance criteria (built and verified in PR #2; milestone done only once Alex 
 
 Plan: turn logic, shots, and end-of-game handling. The computer fires random legal shots here as a stand-in; the real strategy comes in milestone 3.
 
-Acceptance criteria:
-- [ ] Human shoots first; turns alternate after every valid shot, including hits.
-- [ ] Shooting an already-shot cell is rejected with a message and does not use up the turn.
-- [ ] Each shot shows hit / miss / sunk using symbols and text as well as colour (e.g. ✕ hit, • miss, sunk ships outlined and named).
-- [ ] A status line always shows whose turn it is ("Royal Navy’s turn" / "Franco-Spanish Fleet is firing").
-- [ ] A clear "Royal Navy victory" or "Your fleet has been defeated" message when all of one side's ships are sunk; "Enemy ship sunk" (with the ship name) when an enemy ship goes down.
-- [ ] After the game ends, no further shots are accepted from either side.
-- [ ] Restart cancels any pending computer move and resets all state (boards, ships, turn, messages).
-- [ ] Enemy board is usable by keyboard (arrow keys to move, Enter/Space to fire) with a visible focus outline.
-- [ ] Automated tests cover turn order, repeat-shot rejection, sunk detection, win/loss, no moves after game over, and restart cancelling a pending computer move.
+Acceptance criteria (built and verified in the Milestone 2 PR; milestone done only once Alex accepts):
+- [x] Human shoots first; turns alternate after every valid shot, including hits.
+- [x] Shooting an already-shot cell is rejected with a message and does not use up the turn.
+- [x] Each shot shows hit / miss / sunk using symbols and text as well as colour (e.g. ✕ hit, • miss, sunk ships outlined and named).
+- [x] A status line always shows whose turn it is ("Royal Navy’s turn" / "Franco-Spanish Fleet is firing").
+- [x] A clear "Royal Navy victory" or "Your fleet has been defeated" message when all of one side's ships are sunk; "Enemy ship sunk" (with the ship name) when an enemy ship goes down.
+- [x] After the game ends, no further shots are accepted from either side.
+- [x] Restart cancels any pending computer move and resets all state (boards, ships, turn, messages).
+- [x] Enemy board is usable by keyboard (arrow keys to move, Enter/Space to fire) with a visible focus outline.
+- [x] Automated tests cover turn order, repeat-shot rejection, sunk detection, win/loss, no moves after game over, and restart cancelling a pending computer move.
+- [x] Shot history: a Battle log lists every shot in order (who fired, square, miss/hit/sunk).
+- [x] Clicks during the computer's turn are refused with a message, and rapid double clicks fire only once (automated tests).
 
 ## Milestone 3 — Computer strategy
 

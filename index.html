@@ -21,13 +21,16 @@
         <li>Press <strong>Rotate</strong> (or <kbd>R</kbd>) to switch between horizontal and vertical. While pointing at your board with the mouse, <kbd>←</kbd>/<kbd>→</kbd> set horizontal and <kbd>↑</kbd>/<kbd>↓</kbd> set vertical.</li>
         <li>Or press <strong>Random placement</strong>. <strong>Start battle</strong> unlocks once all five ships are placed.</li>
         <li>Keyboard only: <kbd>Tab</kbd> to your board, move with the arrow keys, place with <kbd>Enter</kbd>, rotate with <kbd>R</kbd>.</li>
+        <li>In battle, click a square on the <strong>Franco-Spanish Fleet</strong> board to fire (keyboard: arrow keys, then <kbd>Enter</kbd>). The Royal Navy fires first, then the sides take turns. ✕ marks a hit, • a miss. <strong>Restart</strong> starts a new game.</li>
       </ol>
       <div class="controls">
         <button type="button" id="rotate-btn">Rotate (R): Horizontal</button>
         <button type="button" id="random-btn">Random placement</button>
         <button type="button" id="clear-btn">Clear fleet</button>
         <button type="button" id="start-btn" class="primary" disabled>Start battle</button>
+        <button type="button" id="restart-btn" disabled>Restart</button>
       </div>
+      <p id="turn" class="turn"></p>
       <p id="status" class="status" role="status" aria-live="polite"></p>
     </section>
 
@@ -46,6 +49,11 @@
         <ul class="roster" id="enemy-roster" aria-label="Franco-Spanish ships"></ul>
       </section>
     </div>
+
+    <section class="log-panel" aria-labelledby="log-heading">
+      <h2 id="log-heading">Battle log</h2>
+      <ol class="shot-log" id="shot-log"></ol>
+    </section>
   </main>
 
   <footer class="footer">
