@@ -2,13 +2,20 @@
 
 *Built with Devin, captained by Alex.*
 
-A browser Battleship game with a Trafalgar-inspired theme: the Royal Navy Fleet against the Franco-Spanish Fleet. The opponent is a computer strategy, not an AI or LLM. Ship names are thematic labels, not a historical record.
+A browser Battleship game with a Trafalgar-inspired theme: the Royal Navy Fleet against the Franco-Spanish Fleet. The opponent is a computer strategy (hunt-and-target), not an AI or LLM. Ship names are thematic labels, not a historical record.
 
 Plain HTML, CSS and JavaScript. No runtime libraries, no backend, no login.
 
 ## Status
 
-Milestones 1 (placement) and 2 (game rules) are built. You can place your fleet, fire at the Franco-Spanish Fleet, and play to a win or loss. For now the computer fires at random squares; the hunt-and-target strategy comes in Milestone 3. See [PLAN.md](PLAN.md).
+Milestones 1 (placement), 2 (game rules) and 3 (computer strategy) are built. You can place your fleet, fire at the Franco-Spanish Fleet, and play to a win or loss against a hunt-and-target computer opponent. Public release is Milestone 4. See [PLAN.md](PLAN.md).
+
+## The computer opponent
+
+A simple hunt-and-target strategy in `src/opponent.js`, not an AI or LLM. It is given only its own earlier shots and whether each was a miss, hit or sinking; it never sees where your ships are.
+
+- **Hunt:** fire at random untried squares in a checkerboard pattern (every ship covers at least one).
+- **Target:** after a hit, fire at the squares next to it; once two hits line up, keep firing along that line until the ship sinks, then go back to hunting.
 
 ## Play locally
 
@@ -41,7 +48,7 @@ node tools/check-hover-preview.mjs http://localhost:8000
 - `src/engine.js`: placement rules (board, fleets, placement)
 - `src/game.js`: battle rules (shots, hit/miss/sunk, turns, winner)
 - `src/battle.js`: turn timing (computer delay, cancelling on Restart)
-- `src/opponent.js`: the computer's shot choice (random for now)
+- `src/opponent.js`: the computer's shot choice (hunt-and-target; the random stand-in is kept for tests)
 - `src/art.js`: ship and flag drawings
 - `src/rng.js`: seeded random numbers, so tests can be repeated exactly
 - `src/ui.js`: connects the rules to the page

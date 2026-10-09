@@ -7,7 +7,7 @@ A milestone is only marked done after Alex accepts it (recorded in DECISIONS.md)
 
 - `index.html`, `styles.css` — the page and its look.
 - `src/engine.js` — the game rules only (board, ships, shots, turns, win/loss). No page code, so it can be tested on its own.
-- `src/strategy.js` — the computer's shot-picking logic. It is handed only its own past shots and their results.
+- `src/opponent.js` (planned as `src/strategy.js`) — the computer's shot-picking logic. It is handed only its own past shots and their results.
 - `src/rng.js` — a seeded random number generator, so tests can replay the exact same "random" game.
 - `src/ui.js` — connects the rules to the page (clicks, keyboard, messages).
 - `tests/` — automated tests for the rules and strategy, run with Node's built-in test runner (`node --test`). Node is a development-only tool; the game itself needs nothing but a browser.
@@ -31,7 +31,7 @@ Acceptance criteria (built and verified in PR #2; **accepted by Alex on 2026-10-
 
 Plan: turn logic, shots, and end-of-game handling. The computer fires random legal shots here as a stand-in; the real strategy comes in milestone 3.
 
-Acceptance criteria (built and verified in the Milestone 2 PR; milestone done only once Alex accepts):
+Acceptance criteria (built and verified in PR #3; **accepted by Alex on 2026-10-09**):
 - [x] Human shoots first; turns alternate after every valid shot, including hits.
 - [x] Shooting an already-shot cell is rejected with a message and does not use up the turn.
 - [x] Each shot shows hit / miss / sunk using symbols and text as well as colour (e.g. ✕ hit, • miss, sunk ships outlined and named).
@@ -48,12 +48,12 @@ Acceptance criteria (built and verified in the Milestone 2 PR; milestone done on
 
 Plan: replace the stand-in with hunt-and-target. "Hunt" = fire at unexplored cells (checkerboard pattern); after a hit, "target" = try neighbouring cells until the ship is sunk, then go back to hunting.
 
-Acceptance criteria:
-- [ ] Strategy receives only its own previous shots and their results (miss / hit / sunk). It is never given the player's ship positions; a test checks the data it receives.
-- [ ] After a hit, next shots go to neighbouring cells; after a sink, it returns to hunting.
-- [ ] Never fires at the same cell twice; always finishes a game within 100 shots (tested across many seeds).
-- [ ] Same seed ⇒ same sequence of shots (reproducibility test).
-- [ ] UI labels the opponent as "Computer strategy (hunt-and-target) — not an AI/LLM".
+Acceptance criteria (built and verified in the Milestone 3 PR; milestone done only once Alex accepts):
+- [x] Strategy receives only its own previous shots and their results (miss / hit / sunk). It is never given the player's ship positions; a test checks the data it receives.
+- [x] After a hit, next shots go to neighbouring cells; after a sink, it returns to hunting.
+- [x] Never fires at the same cell twice; always finishes a game within 100 shots (tested across many seeds).
+- [x] Same seed ⇒ same sequence of shots (reproducibility test).
+- [x] UI labels the opponent as "Computer strategy (hunt-and-target) — not an AI/LLM".
 
 ## Milestone 4 — Release
 
