@@ -1,6 +1,7 @@
 // Development-only browser check (needs Google Chrome). Not shipped with the game.
 // Verifies the square under the pointer shows the same preview colour as the rest of the preview,
-// and that board squares stay under their coordinate labels once ship drawings are on the board.
+// that board squares stay under their coordinate labels once ship drawings are on the board,
+// and that a fired-at square keeps its hit or miss marking while the pointer is over it.
 // Usage: node tools/check-hover-preview.mjs [baseUrl]   (default http://localhost:8000)
 import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -72,6 +73,22 @@ try {
   const aligned = alignment.art === 5 && alignment.misplaced.length === 0;
   if (!aligned) failures += 1;
   console.log(`${aligned ? 'PASS' : 'FAIL'} squares under labels after Random placement: ship drawings=${alignment.art} misplaced=${alignment.misplaced.length}${alignment.misplaced.length ? ` (${alignment.misplaced.slice(0, 8).join(' ')}...)` : ''}`);
+
+  const shotCell = `document.querySelector('#enemy-board .cell[data-row="5"][data-col="0"]')`;
+  const shotPoint = await evaluate(`(() => {
+    document.getElementById('start-btn').click();
+    const b = ${shotCell};
+    b.click();
+    b.scrollIntoView({ block: 'center' });
+    const r = b.getBoundingClientRect();
+    return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+  })()`);
+  await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: shotPoint.x, y: shotPoint.y });
+  await sleep(200);
+  const marked = await evaluate(`(() => { const b = ${shotCell}; return { hovered: b.matches(':hover'), result: b.classList.contains('hit') ? 'hit' : b.classList.contains('miss') ? 'miss' : 'none', image: getComputedStyle(b).backgroundImage }; })()`);
+  const keptMark = marked.hovered && marked.result !== 'none' && marked.image.includes('gradient');
+  if (!keptMark) failures += 1;
+  console.log(`${keptMark ? 'PASS' : 'FAIL'} F1 keeps its ${marked.result} marking under the pointer: hovered=${marked.hovered} background-image=${marked.image.startsWith('radial') ? 'radial-gradient' : marked.image}`);
   ws.close();
 } finally {
   const exited = new Promise((r) => chrome.once('exit', r));
