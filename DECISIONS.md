@@ -43,5 +43,5 @@ _None yet._
 | 0 — Spec and plan | https://github.com/Ello-Guvnor/HMSVictory/pull/1 | Pending | Theme amendment added at Alex's request |
 | 1 — Placement | https://github.com/Ello-Guvnor/HMSVictory/pull/2 | **Accepted** (2026-10-02: "Accept Mile Stone 1 - Moving to Mile Stone 2") | Devin Review: 1 flag (fixed, see BUGS.md B2), 0 bugs. Browser testing found B1 (fixed). |
 | 2 — Game rules | https://github.com/Ello-Guvnor/HMSVictory/pull/3 | **Accepted** (2026-10-09: "Accept Milestone 2 and start Milestone 3", including D17–D20) | Browser run found no defects; loss path also checked headless with `?seed=6`. |
-| 3 — Computer strategy | | Pending | |
+| 3 — Computer strategy | https://github.com/Ello-Guvnor/HMSVictory/pull/4 | Pending | Devin Review: 1 finding — a live ship's hit can be counted as part of a touching sunk ship; this is the D21 tradeoff, left for Alex to decide. Browser run found no defects. |
 | 4 — Release | | Pending | |
