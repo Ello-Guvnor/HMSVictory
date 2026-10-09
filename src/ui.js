@@ -19,7 +19,7 @@ import {
 import { ROYAL_NAVY, FRANCO_SPANISH, MISS, HIT, SUNK, shotAt, isShipSunk } from './game.js';
 import { createBattle } from './battle.js';
 import { createRng } from './rng.js';
-import { ENEMY_NATIONS, flagSvg, shipProfileSvg, shipTopSvg } from './art.js';
+import { ENEMY_NATIONS, blastSvg, flagSvg, shipProfileSvg, shipTopSvg, splashSvg } from './art.js';
 
 const PLACEMENT = 'placement';
 const BATTLE = 'battle';
@@ -412,9 +412,35 @@ function afterShotMessage(shot, game) {
   return `${message} ${game.turn === ROYAL_NAVY ? 'Royal Navy’s turn.' : 'Franco-Spanish Fleet is firing…'}`;
 }
 
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+function showShotEffect(boardEl, shot) {
+  if (reducedMotion.matches) return;
+  const fx = document.createElement('div');
+  fx.className = `fx ${shot.result === MISS ? 'fx-splash' : 'fx-blast'}${shot.result === SUNK ? ' fx-sunk' : ''}`;
+  fx.setAttribute('aria-hidden', 'true');
+  fx.style.gridArea = `${shot.row + 2} / ${shot.col + 2}`;
+  fx.innerHTML = shot.result === MISS ? splashSvg() : blastSvg(shot.result === SUNK);
+  fx.addEventListener('animationend', (event) => { if (event.target === fx) fx.remove(); });
+  boardEl.append(fx);
+  if (shot.result !== MISS) {
+    boardEl.classList.remove('shake');
+    void boardEl.offsetWidth;
+    boardEl.classList.add('shake');
+  }
+}
+
+function clearShotEffects() {
+  for (const boardEl of [el.playerBoard, el.enemyBoard]) {
+    boardEl.querySelectorAll('.fx').forEach((node) => node.remove());
+    boardEl.classList.remove('shake');
+  }
+}
+
 function onComputerShot({ shot, game }) {
   if (game.winner) state.phase = OVER;
   render();
+  showShotEffect(el.playerBoard, shot);
   setStatus(afterShotMessage(shot, game));
 }
 
@@ -431,6 +457,7 @@ function playerFireAt(row, col) {
   }
   if (outcome.game.winner) state.phase = OVER;
   render();
+  showShotEffect(el.enemyBoard, outcome.shot);
   setStatus(afterShotMessage(outcome.shot, outcome.game));
 }
 
@@ -456,10 +483,17 @@ function restart() {
   if (state.phase === PLACEMENT) return;
   battle?.dispose();
   battle = null;
+  clearShotEffects();
   state = freshState();
   render();
   promptNextShip();
   el.random.focus();
+}
+
+for (const boardEl of [el.playerBoard, el.enemyBoard]) {
+  boardEl.addEventListener('animationend', (event) => {
+    if (event.target === boardEl) boardEl.classList.remove('shake');
+  });
 }
 
 el.playerBoard.addEventListener('click', (event) => {

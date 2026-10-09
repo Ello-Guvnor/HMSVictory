@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { HORIZONTAL, VERTICAL, ROYAL_NAVY_FLEET, FRANCO_SPANISH_FLEET } from '../src/engine.js';
-import { ENEMY_NATIONS, LIVERIES, flagSvg, shipProfileSvg, shipTopSvg } from '../src/art.js';
+import { ENEMY_NATIONS, LIVERIES, blastSvg, flagSvg, shipProfileSvg, shipTopSvg, splashSvg } from '../src/art.js';
 
 const count = (svg, pattern) => (svg.match(pattern) ?? []).length;
 
@@ -35,4 +35,22 @@ test('flags carry a readable name for tooltips', () => {
   assert.match(flagSvg('french'), /<title>French tricolour/);
   assert.match(flagSvg('spanish'), /<title>Spanish naval ensign/);
   assert.throws(() => flagSvg('pirate'));
+});
+
+test('a hit draws an explosion and a sinking draws a bigger one', () => {
+  const hit = blastSvg();
+  const sunk = blastSvg(true);
+  assert.match(hit, /class="fireball"/);
+  assert.match(hit, /class="smoke"/);
+  assert.equal(count(hit, /class="spark"/g), 10);
+  assert.equal(count(sunk, /class="spark"/g), 14);
+  assert.doesNotMatch(hit, /NaN/);
+});
+
+test('a miss draws a water spout with ripples, not an explosion', () => {
+  const svg = splashSvg();
+  assert.equal(count(svg, /class="plume"/g), 5);
+  assert.match(svg, /class="ripple"/);
+  assert.doesNotMatch(svg, /fireball/);
+  assert.doesNotMatch(svg, /NaN/);
 });
