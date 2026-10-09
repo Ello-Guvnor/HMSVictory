@@ -1,12 +1,15 @@
 // Development-only browser check (needs Google Chrome). Not shipped with the game.
 // Verifies the square under the pointer shows the same preview colour as the rest of the preview,
 // that board squares stay under their coordinate labels once ship drawings are on the board,
-// and that a fired-at square keeps its hit or miss marking while the pointer is over it.
+// that a fired-at square keeps its hit or miss marking while the pointer is over it,
+// and that winning shows the Royal Navy victory screen without a busy cursor on the enemy board.
 // Usage: node tools/check-hover-preview.mjs [baseUrl]   (default http://localhost:8000)
 import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { FRANCO_SPANISH_FLEET, randomFleet } from '../src/engine.js';
+import { createRng } from '../src/rng.js';
 
 const baseUrl = process.argv[2] ?? 'http://localhost:8000';
 const port = 9300 + Math.floor(Math.random() * 500);
@@ -89,6 +92,21 @@ try {
   const keptMark = marked.hovered && marked.result !== 'none' && marked.image.includes('gradient');
   if (!keptMark) failures += 1;
   console.log(`${keptMark ? 'PASS' : 'FAIL'} F1 keeps its ${marked.result} marking under the pointer: hovered=${marked.hovered} background-image=${marked.image.startsWith('radial') ? 'radial-gradient' : marked.image}`);
+
+  const enemyShips = randomFleet(FRANCO_SPANISH_FLEET, createRng(42)).ships.flatMap((ship) => ship.cells);
+  for (const { row, col } of enemyShips) {
+    await sleep(1000);
+    await evaluate(`document.querySelector('#enemy-board .cell[data-row="${row}"][data-col="${col}"]').click()`);
+  }
+  await sleep(2000);
+  const ending = await evaluate(`(() => {
+    const d = document.getElementById('ending');
+    const cell = document.querySelector('#enemy-board .cell');
+    return { open: d.open, royal: d.classList.contains('royal'), title: d.querySelector('h2')?.textContent ?? '', waiting: document.getElementById('enemy-board').classList.contains('waiting'), cursor: getComputedStyle(cell).cursor };
+  })()`);
+  const won = ending.open && ending.royal && ending.title === 'Royal Navy Victory!' && !ending.waiting && ending.cursor !== 'wait';
+  if (!won) failures += 1;
+  console.log(`${won ? 'PASS' : 'FAIL'} winning shows the victory screen with no busy cursor: open=${ending.open} title="${ending.title}" waiting=${ending.waiting} cursor=${ending.cursor}`);
   ws.close();
 } finally {
   const exited = new Promise((r) => chrome.once('exit', r));

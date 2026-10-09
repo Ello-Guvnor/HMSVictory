@@ -16,7 +16,7 @@ import {
   validateFleet,
   randomFleet,
 } from './engine.js';
-import { ROYAL_NAVY, FRANCO_SPANISH, MISS, HIT, SUNK, shotAt, isShipSunk } from './game.js';
+import { ROYAL_NAVY, FRANCO_SPANISH, MISS, HIT, SUNK, shotAt, shotsBy, isShipSunk, sunkShips } from './game.js';
 import { createBattle } from './battle.js';
 import { createRng } from './rng.js';
 import { ENEMY_NATIONS, blastSvg, flagSvg, shipProfileSvg, shipTopSvg, splashSvg } from './art.js';
@@ -39,6 +39,7 @@ const el = {
   log: document.getElementById('shot-log'),
   rotate: document.getElementById('rotate-btn'),
   random: document.getElementById('random-btn'),
+  ending: document.getElementById('ending'),
   clear: document.getElementById('clear-btn'),
   start: document.getElementById('start-btn'),
   restart: document.getElementById('restart-btn'),
@@ -204,7 +205,7 @@ function renderShipArt(boardEl, ships, nationOf) {
 function renderEnemyBoard() {
   const game = battle?.game ?? null;
   const active = state.phase === BATTLE || state.phase === OVER;
-  const holdFire = active && game.turn !== ROYAL_NAVY;
+  const holdFire = state.phase === BATTLE && game.turn !== ROYAL_NAVY;
   const sunk = game ? state.enemy.ships.filter((ship) => isShipSunk(game, FRANCO_SPANISH, ship)) : [];
   el.enemyBoard.classList.toggle('waiting', holdFire);
   for (let row = 0; row < BOARD_SIZE; row += 1) {
@@ -437,11 +438,85 @@ function clearShotEffects() {
   }
 }
 
+const ENDING_DELAY_MS = 1500;
+let endingTimer = null;
+
+const ENDINGS = {
+  [ROYAL_NAVY]: {
+    theme: 'royal',
+    flags: ['white-ensign'],
+    kicker: 'Off Cape Trafalgar',
+    title: 'Royal Navy Victory!',
+    signal: '“England expects that every man will do his duty.”',
+    ship: 'royal',
+    summary: 'The Franco-Spanish Fleet is destroyed. Every enemy ship has struck her colours.',
+    again: 'Sail again',
+  },
+  [FRANCO_SPANISH]: {
+    theme: 'allied',
+    flags: ['french', 'spanish'],
+    kicker: 'Victoire ! · ¡Victoria!',
+    title: 'The Franco-Spanish Fleet Prevails',
+    signal: '“Vive l’Empereur ! ¡Viva el Rey!”',
+    ship: 'spanish',
+    summary: 'Your fleet has been defeated. The Royal Navy Fleet lies beneath the waves.',
+    again: 'Seek revenge',
+  },
+};
+
+function endingHtml(game) {
+  const e = ENDINGS[game.winner];
+  const shots = shotsBy(game, ROYAL_NAVY);
+  const hits = shots.filter((s) => s.result !== MISS).length;
+  const accuracy = shots.length ? Math.round((hits / shots.length) * 100) : 0;
+  const enemySunk = sunkShips(game, FRANCO_SPANISH).length;
+  const ownLost = sunkShips(game, ROYAL_NAVY).length;
+  const stat = (value, label) => `<div><dt>${label}</dt><dd>${value}</dd></div>`;
+  return `<div class="ending-card">
+    <div class="ending-bursts" aria-hidden="true">${'<span></span>'.repeat(6)}</div>
+    <div class="ending-flags" aria-hidden="true">${e.flags.map(flagSvg).join('')}</div>
+    <p class="ending-kicker">${e.kicker}</p>
+    <h2 id="ending-title">${e.title}</h2>
+    <p class="ending-signal">${e.signal}</p>
+    <div class="ending-ship" aria-hidden="true">${shipProfileSvg(5, e.ship)}</div>
+    <p class="ending-summary">${e.summary}</p>
+    <dl class="ending-stats">
+      ${stat(shots.length, 'Shots fired')}${stat(hits, 'Hits')}${stat(`${accuracy}%`, 'Accuracy')}${stat(`${enemySunk} sunk · ${ownLost} lost`, 'Ships')}
+    </dl>
+    <div class="ending-actions">
+      <button type="button" class="primary" data-action="restart">${e.again}</button>
+      <button type="button" data-action="close">View the battlefield</button>
+    </div>
+  </div>`;
+}
+
+function showEnding(game) {
+  el.ending.className = `ending ${ENDINGS[game.winner].theme}`;
+  el.ending.innerHTML = endingHtml(game);
+  el.ending.showModal();
+  el.ending.querySelector('[data-action="restart"]').focus();
+}
+
+function scheduleEnding(game) {
+  window.clearTimeout(endingTimer);
+  endingTimer = window.setTimeout(() => {
+    endingTimer = null;
+    showEnding(game);
+  }, reducedMotion.matches ? 0 : ENDING_DELAY_MS);
+}
+
+function closeEnding() {
+  window.clearTimeout(endingTimer);
+  endingTimer = null;
+  if (el.ending.open) el.ending.close();
+}
+
 function onComputerShot({ shot, game }) {
   if (game.winner) state.phase = OVER;
   render();
   showShotEffect(el.playerBoard, shot);
   setStatus(afterShotMessage(shot, game));
+  if (game.winner) scheduleEnding(game);
 }
 
 function playerFireAt(row, col) {
@@ -459,6 +534,7 @@ function playerFireAt(row, col) {
   render();
   showShotEffect(el.enemyBoard, outcome.shot);
   setStatus(afterShotMessage(outcome.shot, outcome.game));
+  if (outcome.game.winner) scheduleEnding(outcome.game);
 }
 
 function startBattle() {
@@ -483,12 +559,23 @@ function restart() {
   if (state.phase === PLACEMENT) return;
   battle?.dispose();
   battle = null;
+  closeEnding();
   clearShotEffects();
   state = freshState();
   render();
   promptNextShip();
   el.random.focus();
 }
+
+el.ending.addEventListener('click', (event) => {
+  const action = event.target.closest('[data-action]')?.dataset.action;
+  if (action === 'restart') restart();
+  else if (action === 'close') el.ending.close();
+});
+
+el.ending.addEventListener('close', () => {
+  if (state.phase === OVER) el.restart.focus();
+});
 
 for (const boardEl of [el.playerBoard, el.enemyBoard]) {
   boardEl.addEventListener('animationend', (event) => {

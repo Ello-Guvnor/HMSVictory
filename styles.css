@@ -334,3 +334,125 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .shot-log li.ours { color: var(--navy); }
 .shot-log li.theirs { color: var(--bad); }
 .shot-log li.empty { color: var(--brass-dark); font-style: italic; }
+
+.ending {
+  width: min(560px, 94vw);
+  max-height: 94vh;
+  padding: 0;
+  border: none;
+  background: transparent;
+  overflow: visible;
+}
+.ending::backdrop { background: rgba(5, 12, 26, 0.75); }
+.ending-card {
+  --gold: #e6c27a;
+  --spark: #fff3c4;
+  position: relative;
+  overflow: hidden;
+  max-height: 94vh;
+  overflow-y: auto;
+  padding: 1.5rem 1.25rem 1.25rem;
+  border: 5px double var(--gold);
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55);
+  animation: ending-in 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+.ending.royal .ending-card {
+  color: var(--cream);
+  background: radial-gradient(circle at 50% 0, #2c5491, var(--navy-deep) 72%);
+}
+.ending.allied .ending-card {
+  --gold: #f0c24b;
+  --spark: #ffd9d0;
+  color: #fff3d6;
+  background:
+    linear-gradient(90deg, rgba(0, 35, 149, 0.35) 0 12%, transparent 12% 88%, rgba(170, 21, 27, 0.35) 88%),
+    radial-gradient(circle at 50% 0, #b8392c, #3f0d0d 75%);
+}
+.ending-kicker {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.ending h2 {
+  margin: 0.2rem 0 0.4rem;
+  font-size: clamp(1.6rem, 6.5vw, 2.4rem);
+  line-height: 1.1;
+  color: var(--gold);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.5);
+}
+.ending-signal { margin: 0 0 0.5rem; font-style: italic; font-size: 1.05rem; }
+.ending-flags { display: flex; justify-content: center; gap: 0.75rem; }
+.ending-flags .flag {
+  width: 96px;
+  height: 48px;
+  transform-origin: left center;
+  animation: flag-wave 2.4s ease-in-out infinite;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+}
+.ending-ship svg {
+  width: min(260px, 70%);
+  height: auto;
+  animation: ship-bob 3s ease-in-out infinite;
+}
+.ending-summary { margin: 0.25rem 0 0.75rem; }
+.ending-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+}
+.ending-stats div {
+  padding: 0.4rem 0.25rem;
+  border: 1px solid var(--gold);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.25);
+}
+.ending-stats dt { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gold); }
+.ending-stats dd { margin: 0.15rem 0 0; font-size: 1.15rem; font-weight: bold; }
+.ending-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; }
+.ending-actions button { min-width: 10rem; }
+.ending-actions button.primary { background: var(--gold); border-color: var(--gold); color: var(--navy-deep); }
+.ending-bursts span {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  pointer-events: none;
+  color: var(--gold);
+  box-shadow:
+    0 -26px 0 0 currentColor, 0 26px 0 0 currentColor, 26px 0 0 0 currentColor, -26px 0 0 0 currentColor,
+    18px 18px 0 0 var(--spark), -18px 18px 0 0 var(--spark), 18px -18px 0 0 var(--spark), -18px -18px 0 0 var(--spark);
+  opacity: 0;
+  animation: burst 2.8s ease-out infinite;
+}
+.ending-bursts span:nth-child(1) { top: 14%; left: 12%; }
+.ending-bursts span:nth-child(2) { top: 10%; right: 14%; animation-delay: 0.45s; }
+.ending-bursts span:nth-child(3) { top: 42%; left: 8%; animation-delay: 0.9s; }
+.ending-bursts span:nth-child(4) { top: 38%; right: 9%; animation-delay: 1.35s; }
+.ending-bursts span:nth-child(5) { top: 68%; left: 14%; animation-delay: 1.8s; }
+.ending-bursts span:nth-child(6) { top: 64%; right: 13%; animation-delay: 2.25s; }
+.ending.allied .ending-bursts span:nth-child(odd) { color: #6f8cff; }
+
+@keyframes ending-in { from { opacity: 0; transform: translateY(-30px) scale(0.9); } }
+@keyframes flag-wave { 0%, 100% { transform: skewY(0deg) scaleX(1); } 50% { transform: skewY(-4deg) scaleX(0.96); } }
+@keyframes ship-bob { 0%, 100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-5px) rotate(1deg); } }
+@keyframes burst {
+  0% { opacity: 0; transform: scale(0.2); }
+  10% { opacity: 1; }
+  45% { opacity: 0; transform: scale(1.4); }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+
+@media (max-width: 480px) {
+  .ending-stats { grid-template-columns: repeat(2, 1fr); }
+  .ending-flags .flag { width: 72px; height: 36px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ending-card, .ending-flags .flag, .ending-ship svg { animation: none; }
+  .ending-bursts { display: none; }
+}
