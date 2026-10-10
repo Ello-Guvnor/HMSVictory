@@ -122,6 +122,33 @@ test('the computer is given only its own previous shots and results, never ship 
   }
 });
 
+test('after a sinking, the computer is told only the sunk ship\'s length, as the game announces it', () => {
+  const clock = fakeClock();
+  const seen = [];
+  const battle = newBattle(clock, {
+    chooseShot: (ownShots, rng) => {
+      seen.push(structuredClone(ownShots));
+      return huntTargetShot(ownShots, rng);
+    },
+  });
+  for (const { row, col } of openWater(enemy)) {
+    if (battle.game.winner) break;
+    battle.playerFire(row, col);
+    clock.advance(COMPUTER_DELAY_MS);
+  }
+  const told = seen.at(-1);
+  const history = shotsBy(battle.game, FRANCO_SPANISH).slice(0, told.length);
+  assert.ok(history.some((s) => s.result === SUNK), 'the computer sank at least one ship');
+  history.forEach((actual, i) => {
+    if (actual.result === SUNK) {
+      const { length } = ROYAL_NAVY_FLEET.find((spec) => spec.name === actual.sunkShip);
+      assert.deepEqual(told[i], { row: actual.row, col: actual.col, result: SUNK, sunkLength: length });
+    } else {
+      assert.deepEqual(told[i], { row: actual.row, col: actual.col, result: actual.result });
+    }
+  });
+});
+
 test('Royal Navy win: the final shot ends the game and no computer reply is queued', () => {
   const clock = fakeClock();
   const battle = newBattle(clock, { chooseShot: (own) => openWater(royal)[own.length] });
