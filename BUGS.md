@@ -87,7 +87,7 @@ Only defects actually observed are logged here. Each entry has: reproduction ste
 - Cause (likely): the only touch control for direction was the Rotate button in the Orders panel, well above the board on a phone screen; R and the arrow keys need a keyboard; phones have no hover preview, so changing direction gave no visible sign at the board; and a placed ship could not be turned at all.
 - Fix (`25c26b3`): a "↻ Turn next ship: Horizontal →/Vertical ↓" button directly above your board while ships remain, and tapping (or clicking, or Enter on) a placed ship turns it about its first square if the turn is legal; otherwise the status explains why and the ship stays put. New engine function `rotateShip` keeps the rule out of the page code.
 - Regression test: 4 new `npm test` cases for `rotateShip` (turn and turn back, off-board and overlap refusals, missing ship, rotated fleet still valid); `node tools/check-hover-preview.mjs` gains a "phone taps" check (390px, touch emulation) that taps the Turn button, places Victory vertically, taps it to turn it horizontal, and confirms a turn off the board is refused. Actual result on `25c26b3`: PASS.
-- Verifying commit: `25c26b3`. Real-iPhone confirmation is pending Alex.
+- Verifying commit: `25c26b3`. Confirmed working by Alex on his iPhone on the live site (2026-10-10).
 
 ### B9 — On a phone, taps on the enemy board seemed to be ignored (usability)
 - Found: 2026-10-10, by Alex playing the live site on his iPhone: "sometimes when i tried to fire a shot on the mobile it didn't catch it and then i had to tap the square that i wanted to fire at again. happened a few times."
@@ -97,7 +97,7 @@ Only defects actually observed are logged here. Each entry has: reproduction ste
 - Cause (likely): by design (SPEC, D17), taps during the computer's 0.8 s turn are refused. On a phone the only signs of that turn were above or below the enemy board, out of view, and the busy cursor does not exist on touch screens.
 - Fix (`11b3ea5`): a strip directly above the enemy board shows "▶ Your turn — tap a square to fire" or "… Enemy firing — hold fire", plus the last shot ("They fired at C1: miss"). During the enemy's turn the board's squares dim. A refused tap makes the strip shake with a red outline (a static outline with reduced motion). Follow-up (`e820beb`, from Devin Review): the strip stays pinned to the top of the screen while the board is scrolled, which matters on short or landscape screens; at game over it shows the final shot; and the reduced-motion outline clears on the next update. Turn rules and the 0.8 s delay are unchanged. `touch-action: manipulation` was also added to the boards so quick taps cannot be taken as a double-tap zoom. That is a precaution for iPhone Safari; it was not observed in Chrome.
 - Regression test: `node tools/check-hover-preview.mjs` gains a "phone firing" check (390px, touch emulation). It taps twice quickly and confirms that only one shot fires, that the strip is on screen, says "hold fire" and flashes, and that the board is dimmed. After the delay the strip says "Your turn", the next tap fires, and the strip height does not change. A "landscape phone" check (844×390) keeps the strip on screen with row J at the bottom, and the win check confirms the strip names the winning shot. Actual result on `e820beb`: PASS.
-- Verifying commit: `11b3ea5`. Real-iPhone confirmation is pending Alex.
+- Verifying commit: `11b3ea5`. Confirmed working by Alex on his iPhone on the live site (2026-10-10, release `cf28da9`).
 
 <!-- Template
 ### B<n> — short title
@@ -115,6 +115,6 @@ Only defects actually observed are logged here. Each entry has: reproduction ste
 
 Things that have not been verified yet. Moved or removed once checked.
 
-- Physical phones and non-Chrome browsers (Safari, Firefox) have not been tested. Mobile was checked only with Chrome's phone-size emulation (390×844, touch).
+- Alex has played the live site on his iPhone and confirmed that turning ships (B8) and firing (B9) work. Devin's own mobile checks use Chrome's phone-size emulation (390×844, touch). Other phones and desktop Safari/Firefox have not been tested.
 - Spoken screen-reader output (e.g. VoiceOver, NVDA) has not been tested. Only the labels in the accessibility tree were checked.
 - On touch screens there is no hover preview: a tap places the ship at once. Clear fleet is the only way to undo.
