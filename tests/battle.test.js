@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { ROYAL_NAVY_FLEET, FRANCO_SPANISH_FLEET, randomFleet } from '../src/engine.js';
 import { ROYAL_NAVY, FRANCO_SPANISH, SUNK, shotsBy } from '../src/game.js';
 import { createBattle, COMPUTER_DELAY_MS } from '../src/battle.js';
-import { randomShot } from '../src/opponent.js';
+import { huntTargetShot, randomShot } from '../src/opponent.js';
 import { createRng } from '../src/rng.js';
 import { rowsFleet, shipSquares, openWater, fakeClock } from './helpers.js';
 
@@ -162,7 +162,7 @@ test('Franco-Spanish win: the computer final shot ends the game and the player c
   assert.equal(battle.playerFire(9, 9).reason, 'game-over');
 });
 
-function seededGame(seed) {
+function seededGame(seed, chooseShot) {
   const rng = createRng(seed);
   const clock = fakeClock();
   const battle = createBattle({
@@ -171,6 +171,7 @@ function seededGame(seed) {
     rng,
     schedule: clock.schedule,
     cancel: clock.cancel,
+    chooseShot,
   });
   for (let row = 0; row < 10 && !battle.game.winner; row += 1) {
     for (let col = 0; col < 10 && !battle.game.winner; col += 1) {
@@ -181,14 +182,25 @@ function seededGame(seed) {
   return battle;
 }
 
-test('seeded full games with the random opponent always finish, and repeat exactly', () => {
-  for (let seed = 1; seed <= 25; seed += 1) {
-    const battle = seededGame(seed);
-    assert.ok(battle.game.winner === ROYAL_NAVY || battle.game.winner === FRANCO_SPANISH, `seed ${seed} finished`);
-    const coords = battle.game.history.filter((s) => s.shooter === FRANCO_SPANISH).map((s) => s.coord);
-    assert.equal(new Set(coords).size, coords.length, `seed ${seed}: computer never repeats a square`);
-    assert.deepEqual(seededGame(seed).game.history, battle.game.history, `seed ${seed} is reproducible`);
-  }
+for (const [name, chooseShot] of [['random', randomShot], ['hunt-and-target', huntTargetShot]]) {
+  test(`seeded full games with the ${name} opponent always finish, and repeat exactly`, () => {
+    for (let seed = 1; seed <= 25; seed += 1) {
+      const battle = seededGame(seed, chooseShot);
+      assert.ok(battle.game.winner === ROYAL_NAVY || battle.game.winner === FRANCO_SPANISH, `seed ${seed} finished`);
+      const coords = battle.game.history.filter((s) => s.shooter === FRANCO_SPANISH).map((s) => s.coord);
+      assert.equal(new Set(coords).size, coords.length, `seed ${seed}: computer never repeats a square`);
+      assert.deepEqual(seededGame(seed, chooseShot).game.history, battle.game.history, `seed ${seed} is reproducible`);
+    }
+  });
+}
+
+test('the battle uses the hunt-and-target strategy by default', () => {
+  const clock = fakeClock();
+  const seen = [];
+  const battle = newBattle(clock, { onComputerShot: (o) => seen.push(o.shot) });
+  battle.playerFire(9, 9);
+  clock.advance(COMPUTER_DELAY_MS);
+  assert.deepEqual(seen.map(({ row, col }) => ({ row, col })), [huntTargetShot([], createRng(1))]);
 });
 
 test('randomShot picks only squares not yet tried, and fails loudly when none are left', () => {

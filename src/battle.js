@@ -1,5 +1,5 @@
 import { createGame, fire, shotsBy, ROYAL_NAVY, FRANCO_SPANISH } from './game.js';
-import { randomShot } from './opponent.js';
+import { huntTargetShot } from './opponent.js';
 
 export const COMPUTER_DELAY_MS = 800;
 
@@ -9,7 +9,7 @@ export function createBattle({
   rng,
   schedule,
   cancel,
-  chooseShot = randomShot,
+  chooseShot = huntTargetShot,
   delayMs = COMPUTER_DELAY_MS,
   onComputerShot = () => {},
 }) {

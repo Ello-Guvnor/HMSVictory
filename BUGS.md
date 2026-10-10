@@ -59,6 +59,16 @@ Only defects actually observed are logged here. Each entry has: reproduction ste
 - Regression test: `node tools/check-hover-preview.mjs http://localhost:8000` now also starts a battle, fires at F1, points at it and checks the marking is still drawn. Actual results: `92530ac` FAIL (`background-image=none`); `46b8ac1` PASS.
 - Verifying commit: `46b8ac1`.
 
+### B6 — After the game ended, the enemy board showed a busy (spinning) cursor
+- Found: 2026-10-09, Milestone 3 review, reported by Alex after winning a game in the preview ("all i got was a spinning wheel"), on commit `5f2ad91`.
+- Steps to reproduce: play a game to a win (or loss), then point at the Franco-Spanish board.
+- Expected: once the game is over, nothing suggests the game is still working.
+- Actual (`5f2ad91`): the pointer over the enemy board became the busy cursor (spinning wheel) and stayed that way.
+- Cause: the "Hold fire" check was `game.turn !== ROYAL_NAVY`. When a game ends, `turn` becomes empty, so the board looked as if it were still waiting for the computer, and kept the busy cursor.
+- Fix (`9cd226e`): the busy state now applies only while the battle is still in progress.
+- Regression test: `node tools/check-hover-preview.mjs http://localhost:8000` now plays a seeded game to a win and checks the enemy board is not busy and its cursor is not `wait`. Actual results: with the old check FAIL (`waiting=true cursor=wait`); `9cd226e` PASS (`waiting=false cursor=pointer`).
+- Verifying commit: `9cd226e`.
+
 <!-- Template
 ### B<n> — short title
 - Found: date, milestone, how (test / manual check / review)
