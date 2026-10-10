@@ -137,3 +137,49 @@ export function shipTopSvg(length, nation, orientation) {
   }
   return `<svg class="ship-top" viewBox="0 0 ${L} 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">${body}</svg>`;
 }
+
+function starburst(cx, cy, outer, inner, spikes) {
+  const points = [];
+  for (let i = 0; i < spikes * 2; i += 1) {
+    const radius = i % 2 === 0 ? outer * (i % 4 === 0 ? 1 : 0.82) : inner;
+    const angle = (Math.PI * i) / spikes - Math.PI / 2;
+    points.push(`${n(cx + radius * Math.cos(angle))},${n(cy + radius * Math.sin(angle))}`);
+  }
+  return points.join(' ');
+}
+
+export function blastSvg(sunk = false) {
+  const spikes = sunk ? 14 : 10;
+  const smoke = [[30, 34, 16], [68, 30, 18], [50, 22, 15], [24, 60, 13], [76, 62, 14]]
+    .map(([cx, cy, r]) => `<circle class="smoke" cx="${cx}" cy="${cy}" r="${r}" fill="#4a4540"/>`)
+    .join('');
+  const sparks = Array.from({ length: spikes }, (_, i) => {
+    const angle = (2 * Math.PI * i) / spikes;
+    const x1 = n(50 + 30 * Math.cos(angle));
+    const y1 = n(50 + 30 * Math.sin(angle));
+    const x2 = n(50 + 48 * Math.cos(angle));
+    const y2 = n(50 + 48 * Math.sin(angle));
+    return `<line class="spark" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#ffd36b" stroke-width="2.5" stroke-linecap="round"/>`;
+  }).join('');
+  return `<svg viewBox="0 0 100 100" aria-hidden="true" focusable="false" overflow="visible">`
+    + `<g class="smoke-cloud">${smoke}</g>`
+    + `<polygon class="fireball" points="${starburst(50, 50, 44, 20, spikes)}" fill="#e2561b"/>`
+    + `<polygon class="fireball-core" points="${starburst(50, 50, 28, 13, spikes)}" fill="#ffb03a"/>`
+    + `<circle class="flash" cx="50" cy="50" r="11" fill="#fff4c8"/>`
+    + `<g class="sparks">${sparks}</g>`
+    + '</svg>';
+}
+
+export function splashSvg() {
+  const plumes = [[50, 6, 9], [36, 26, 7], [64, 24, 7], [26, 46, 5], [74, 44, 5]]
+    .map(([x, top, w]) => `<path class="plume" d="M${x - w} 78 Q${x - w / 2} ${top + 20} ${x} ${top} Q${x + w / 2} ${top + 20} ${x + w} 78 Z" fill="#eaf4ff"/>`)
+    .join('');
+  const drops = [[30, 14], [70, 12], [18, 32], [82, 30], [44, 2], [58, 4]]
+    .map(([cx, cy]) => `<circle class="drop" cx="${cx}" cy="${cy}" r="2.6" fill="#d6e9ff"/>`)
+    .join('');
+  return `<svg viewBox="0 0 100 100" aria-hidden="true" focusable="false" overflow="visible">`
+    + '<ellipse class="ripple" cx="50" cy="80" rx="30" ry="9" fill="none" stroke="#d6e9ff" stroke-width="3"/>'
+    + '<ellipse class="ripple ripple-outer" cx="50" cy="80" rx="44" ry="13" fill="none" stroke="#d6e9ff" stroke-width="2"/>'
+    + `<g class="spout">${plumes}</g>${drops}`
+    + '</svg>';
+}

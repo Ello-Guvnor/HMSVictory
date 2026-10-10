@@ -8,7 +8,7 @@ Plain HTML, CSS and JavaScript. No runtime libraries, no backend, no login.
 
 ## Status
 
-Milestone 1 (placement) is built. You can place ships but can't fire yet; turn-taking and the computer opponent come in later milestones. See [PLAN.md](PLAN.md).
+Milestones 1 (placement) and 2 (game rules) are built. You can place your fleet, fire at the Franco-Spanish Fleet, and play to a win or loss. For now the computer fires at random squares; the hunt-and-target strategy comes in Milestone 3. See [PLAN.md](PLAN.md).
 
 ## Play locally
 
@@ -23,7 +23,7 @@ Add `?seed=123` to the URL to make "random" placement repeat exactly (useful for
 
 ## Tests
 
-The rules are in `src/engine.js`, which contains no page code, so they can be tested on their own. Tests use Node's built-in test runner (Node 20 or newer, development only):
+The rules are in `src/engine.js` (placement) and `src/game.js` (shots, turns, winner), which contain no page code, so they can be tested on their own. `src/battle.js` handles the computer's delay and Restart; tests give it a fake clock so timing can be checked exactly. Tests use Node's built-in test runner (Node 20 or newer, development only):
 
 ```sh
 npm test        # same as: node --test
@@ -38,7 +38,11 @@ node tools/check-hover-preview.mjs http://localhost:8000
 ## Files
 
 - `index.html`, `styles.css`: the page and its styling
-- `src/engine.js`: game rules (board, fleets, placement)
+- `src/engine.js`: placement rules (board, fleets, placement)
+- `src/game.js`: battle rules (shots, hit/miss/sunk, turns, winner)
+- `src/battle.js`: turn timing (computer delay, cancelling on Restart)
+- `src/opponent.js`: the computer's shot choice (random for now)
+- `src/art.js`: ship and flag drawings
 - `src/rng.js`: seeded random numbers, so tests can be repeated exactly
 - `src/ui.js`: connects the rules to the page
 - `tests/`: automated tests

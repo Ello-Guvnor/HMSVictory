@@ -49,6 +49,16 @@ Only defects actually observed are logged here. Each entry has: reproduction ste
 - Regression test: `node tools/check-hover-preview.mjs http://localhost:8000` now also presses Random placement and checks that all 100 squares sit under their row and column labels. Actual results: `11c4b74` FAIL (99 squares misplaced); `4b9b7c8` PASS (0 misplaced).
 - Verifying commit: `4b9b7c8`.
 
+### B5 — A fired-at square lost its scorch or ripple marking while the pointer was over it
+- Found: 2026-10-02, Milestone 2 (cannon-fire effects, D20), browser test run by Devin's testing agent on commit `92530ac`.
+- Steps to reproduce: open `/?seed=42`, press Random placement, then Start battle, fire at F1 on the Franco-Spanish board and leave the pointer on F1.
+- Expected: F1 keeps its new hit marking (orange scorch with ✕) whether or not the pointer is over it.
+- Actual (92530ac): while hovered, F1 showed only a plain ✕ on the hover colour; the scorch appeared once the pointer moved away and vanished again on hover. Misses lost their ripple rings the same way. The ✕ / • symbols stayed visible.
+- Cause: the general button hover style (`button:hover:not(:disabled)`) sets the whole background, and it was more specific than the new hit/miss styles, so it wiped their background drawing.
+- Fix (`46b8ac1`): the hit, miss and sunk styles are scoped to the board (`.board .cell.hit` etc.), which makes them more specific than the button hover style.
+- Regression test: `node tools/check-hover-preview.mjs http://localhost:8000` now also starts a battle, fires at F1, points at it and checks the marking is still drawn. Actual results: `92530ac` FAIL (`background-image=none`); `46b8ac1` PASS.
+- Verifying commit: `46b8ac1`.
+
 <!-- Template
 ### B<n> — short title
 - Found: date, milestone, how (test / manual check / review)
