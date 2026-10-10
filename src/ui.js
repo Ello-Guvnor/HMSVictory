@@ -383,7 +383,7 @@ function turnPlacedShip(ship) {
   }
   state.player = result.board;
   render();
-  setStatus(`${ship.name} turned ${orientationWord(result.ship.orientation)}. Tap it again to turn it back.`);
+  setStatus(`${ship.name} turned ${orientationWord(result.ship.orientation)}. Tap any of its squares to turn it back.`);
 }
 
 function setOrientation(orientation) {
