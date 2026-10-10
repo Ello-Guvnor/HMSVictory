@@ -110,7 +110,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 .board-caption { margin: 0 0 0.5rem; font-size: 0.9rem; color: var(--brass-dark); }
-.board-rotate { display: block; margin: 0 0 0.5rem; min-height: 44px; }
+.board-rotate { display: block; box-sizing: border-box; height: 3.25rem; margin: 0 0 0.5rem; min-height: 44px; }
 .board-rotate[hidden] { display: none; }
 
 .board {
@@ -243,6 +243,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   top: 0;
   z-index: 5;
   display: grid;
+  box-sizing: border-box;
+  height: 3.25rem;
   margin: 0 0 0.5rem;
   min-height: 44px;
   padding: 0.3rem 0.6rem;
@@ -253,6 +255,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   font-weight: bold;
   line-height: 1.3;
 }
+.board-turn[hidden] { display: none; }
+#player-turn { position: static; }
 .board-turn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .board-turn-detail { font-size: 0.85rem; font-weight: normal; }
 .board-turn.ours { background: var(--navy); color: var(--cream); }

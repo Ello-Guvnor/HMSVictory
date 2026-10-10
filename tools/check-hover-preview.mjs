@@ -3,7 +3,8 @@
 // that board squares stay under their coordinate labels once ship drawings are on the board,
 // that a fired-at square keeps its hit or miss marking while the pointer is over it,
 // that on a phone the strip above the enemy board shows whose turn it is and flags a tap refused during the enemy's turn,
-// and that winning shows the Royal Navy victory screen without a busy cursor on the enemy board.
+// that winning shows the Royal Navy victory screen without a busy cursor on the enemy board,
+// and that on a wide screen the two boards start at the same height in every phase.
 // Usage: node tools/check-hover-preview.mjs [baseUrl]   (default http://localhost:8000)
 import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -188,6 +189,19 @@ try {
     && /Restart unlocks once the battle begins and stays available after it ends/.test(orders);
   if (!(statesOk && ordersOk)) failures += 1;
   console.log(`${statesOk && ordersOk ? 'PASS' : 'FAIL'} Clear fleet / Restart availability matches the Orders: placing ${fmt(placingControls)}; battle ${fmt(battleControls)}; game over ${fmt(overControls)}; orders-wording-ok=${ordersOk}`);
+
+  await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 1000, deviceScaleFactor: 1, mobile: false });
+  await send('Page.navigate', { url: `${baseUrl}/?seed=42` });
+  await sleep(1500);
+  const boardOffset = () => evaluate(`Math.round(document.getElementById('player-board').getBoundingClientRect().top - document.getElementById('enemy-board').getBoundingClientRect().top)`);
+  const offsets = [await boardOffset()];
+  await evaluate(`document.getElementById('random-btn').click()`);
+  offsets.push(await boardOffset());
+  await evaluate(`document.getElementById('start-btn').click()`);
+  offsets.push(await boardOffset());
+  const level = offsets.every((d) => d === 0);
+  if (!level) failures += 1;
+  console.log(`${level ? 'PASS' : 'FAIL'} side-by-side boards start level (placing / fleet placed / battle): offsets ${offsets.join(' / ')}px`);
   ws.close();
 } finally {
   const exited = new Promise((r) => chrome.once('exit', r));
