@@ -2,6 +2,7 @@
 // Verifies the square under the pointer shows the same preview colour as the rest of the preview,
 // that board squares stay under their coordinate labels once ship drawings are on the board,
 // that a fired-at square keeps its hit or miss marking while the pointer is over it,
+// that on a phone the strip above the enemy board shows whose turn it is and flags a tap refused during the enemy's turn,
 // and that winning shows the Royal Navy victory screen without a busy cursor on the enemy board.
 // Usage: node tools/check-hover-preview.mjs [baseUrl]   (default http://localhost:8000)
 import { spawn } from 'node:child_process';
@@ -87,7 +88,31 @@ try {
     && refusedEdge.cells === '09 19 29 39 49' && /can't turn horizontal/.test(refusedEdge.status);
   if (!touchOk) failures += 1;
   console.log(`${touchOk ? 'PASS' : 'FAIL'} phone taps: turn button visible=${turnButton.visible} above-board=${turnButton.aboveBoard}; placed vertical=${tappedVertical}; tap ship -> ${turnedHorizontal}; edge refusal keeps ${refusedEdge.cells} ("${refusedEdge.status}")`);
-  await evaluate(`document.getElementById('clear-btn').click()`);
+  await evaluate(`document.getElementById('random-btn').click(); document.getElementById('start-btn').click(); document.getElementById('enemy-board').scrollIntoView({ block: 'center' })`);
+  await sleep(300);
+  const quickTap = async (row, col) => {
+    const p = await evaluate(`(() => { const r = document.querySelector('#enemy-board .cell[data-row="${row}"][data-col="${col}"]').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`);
+    await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: p.x, y: p.y }] });
+    await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await sleep(50);
+  };
+  const strip = () => evaluate(`(() => { const s = document.getElementById('enemy-turn'); const r = s.getBoundingClientRect(); return { text: s.textContent, ours: s.classList.contains('ours'), theirs: s.classList.contains('theirs'), refused: s.classList.contains('refused'), inView: r.top >= 0 && r.bottom <= innerHeight, height: Math.round(r.height), shots: document.querySelectorAll('#enemy-board .cell.hit, #enemy-board .cell.miss').length, dimmed: getComputedStyle(document.querySelector('#enemy-board .cell')).filter !== 'none' }; })()`);
+  const ready = await strip();
+  await quickTap(0, 0);
+  await quickTap(0, 1);
+  const waiting = await strip();
+  await sleep(1200);
+  const back = await strip();
+  await quickTap(0, 1);
+  const fired = await strip();
+  const fireOk = ready.ours && ready.inView && /Your turn/.test(ready.text)
+    && waiting.shots === 1 && waiting.theirs && waiting.refused && waiting.inView && waiting.dimmed && /hold fire/.test(waiting.text) && /Your shot at A1/.test(waiting.text)
+    && back.ours && !back.dimmed && /They fired at [A-J]\d+/.test(back.text) && fired.shots === 2
+    && ready.height === waiting.height && waiting.height === back.height;
+  if (!fireOk) failures += 1;
+  console.log(`${fireOk ? 'PASS' : 'FAIL'} phone firing: strip in view=${ready.inView}/${waiting.inView}; tap during enemy turn refused=${waiting.shots === 1} flashed=${waiting.refused} dimmed=${waiting.dimmed} ("${waiting.text}"); after delay "${back.text}"; next tap fired=${fired.shots === 2}; strip height ${ready.height}/${waiting.height}/${back.height}px`);
+  await send('Page.navigate', { url: `${baseUrl}/?seed=42` });
+  await sleep(1500);
   await send('Emulation.setTouchEmulationEnabled', { enabled: false });
   await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 1000, deviceScaleFactor: 1, mobile: false });
   await sleep(300);
