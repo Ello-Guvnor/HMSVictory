@@ -36,10 +36,10 @@ MIT. See [LICENSE](LICENSE). All code, drawings and text are original to this pr
 
 ## The computer opponent
 
-A simple hunt-and-target strategy in `src/opponent.js`, not an AI or LLM. It is given only its own earlier shots and whether each was a miss, hit or sinking; it never sees where your ships are.
+A simple hunt-and-target strategy in `src/opponent.js`, not an AI or LLM. It is given only its own earlier shots and whether each was a miss, hit or sinking, plus the length of any ship it sank (the game announces which ship sank). It never sees where your ships are.
 
 - **Hunt:** fire at random untried squares in a checkerboard pattern (every ship covers at least one).
-- **Target:** after a hit, fire at the squares next to it; once two hits line up, keep firing along that line until the ship sinks, then go back to hunting.
+- **Target:** after a hit, fire at the squares next to it; once two hits line up, keep firing along that line until the ship sinks. Hits that may belong to another ship, such as one touching the sunk ship, are still chased; then it goes back to hunting.
 
 ## Play locally
 
