@@ -307,12 +307,14 @@ function renderTurn() {
 function renderEnemyTurn() {
   const game = battle?.game ?? null;
   const [main, detail] = el.enemyTurn.children;
-  el.enemyTurn.classList.remove('ours', 'theirs');
+  el.enemyTurn.classList.remove('ours', 'theirs', 'refused');
   const theirTurn = game && !game.winner && game.turn !== ROYAL_NAVY;
-  const lastShot = game ? shotsBy(game, theirTurn ? ROYAL_NAVY : FRANCO_SPANISH).at(-1) : null;
+  const lastShot = !game ? null
+    : game.winner ? game.history.at(-1)
+    : shotsBy(game, theirTurn ? ROYAL_NAVY : FRANCO_SPANISH).at(-1);
   const outcome = lastShot && (lastShot.result === SUNK ? `sank ${lastShot.sunkShip}` : resultWord(lastShot.result));
   detail.textContent = lastShot
-    ? `${theirTurn ? 'Your shot at' : 'They fired at'} ${lastShot.coord}: ${outcome}`
+    ? `${lastShot.shooter === ROYAL_NAVY ? 'Your shot at' : 'They fired at'} ${lastShot.coord}: ${outcome}`
     : '\u00a0';
   if (!game) {
     main.textContent = 'Place your fleet, then Start battle';

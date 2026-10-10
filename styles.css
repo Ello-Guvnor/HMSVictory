@@ -239,6 +239,9 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .board { touch-action: manipulation; }
 
 .board-turn {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   display: grid;
   margin: 0 0 0.5rem;
   min-height: 44px;

@@ -111,6 +111,12 @@ try {
     && ready.height === waiting.height && waiting.height === back.height;
   if (!fireOk) failures += 1;
   console.log(`${fireOk ? 'PASS' : 'FAIL'} phone firing: strip in view=${ready.inView}/${waiting.inView}; tap during enemy turn refused=${waiting.shots === 1} flashed=${waiting.refused} dimmed=${waiting.dimmed} ("${waiting.text}"); after delay "${back.text}"; next tap fired=${fired.shots === 2}; strip height ${ready.height}/${waiting.height}/${back.height}px`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 844, height: 390, deviceScaleFactor: 2, mobile: true });
+  await sleep(300);
+  const landscape = await evaluate(`(() => { document.querySelector('#enemy-board .cell[data-row="9"][data-col="9"]').scrollIntoView({ block: 'end' }); const s = document.getElementById('enemy-turn').getBoundingClientRect(); return s.top >= 0 && s.bottom <= innerHeight; })()`);
+  if (!landscape) failures += 1;
+  console.log(`${landscape ? 'PASS' : 'FAIL'} landscape phone (844x390): turn strip stays in view with row J at the bottom of the screen`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
   await send('Page.navigate', { url: `${baseUrl}/?seed=42` });
   await sleep(1500);
   await send('Emulation.setTouchEmulationEnabled', { enabled: false });
@@ -164,11 +170,12 @@ try {
   const ending = await evaluate(`(() => {
     const d = document.getElementById('ending');
     const cell = document.querySelector('#enemy-board .cell');
-    return { open: d.open, royal: d.classList.contains('royal'), title: d.querySelector('h2')?.textContent ?? '', waiting: document.getElementById('enemy-board').classList.contains('waiting'), cursor: getComputedStyle(cell).cursor };
+    return { open: d.open, royal: d.classList.contains('royal'), title: d.querySelector('h2')?.textContent ?? '', waiting: document.getElementById('enemy-board').classList.contains('waiting'), cursor: getComputedStyle(cell).cursor, strip: document.getElementById('enemy-turn').textContent };
   })()`);
-  const won = ending.open && ending.royal && ending.title === 'Royal Navy Victory!' && !ending.waiting && ending.cursor !== 'wait';
+  const lastCoord = `${'ABCDEFGHIJ'[enemyShips.at(-1).row]}${enemyShips.at(-1).col + 1}`;
+  const won = ending.open && ending.royal && ending.title === 'Royal Navy Victory!' && !ending.waiting && ending.cursor !== 'wait' && ending.strip.includes(`Your shot at ${lastCoord}`);
   if (!won) failures += 1;
-  console.log(`${won ? 'PASS' : 'FAIL'} winning shows the victory screen with no busy cursor: open=${ending.open} title="${ending.title}" waiting=${ending.waiting} cursor=${ending.cursor}`);
+  console.log(`${won ? 'PASS' : 'FAIL'} winning shows the victory screen with no busy cursor: open=${ending.open} title="${ending.title}" waiting=${ending.waiting} cursor=${ending.cursor} strip="${ending.strip}"`);
 
   const overControls = await controls();
   const orders = await evaluate(`document.querySelector('.instructions').textContent.replace(/\\s+/g, ' ')`);
