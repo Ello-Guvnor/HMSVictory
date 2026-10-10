@@ -99,6 +99,16 @@ Only defects actually observed are logged here. Each entry has: reproduction ste
 - Regression test: `node tools/check-hover-preview.mjs` gains a "phone firing" check (390px, touch emulation). It taps twice quickly and confirms that only one shot fires, that the strip is on screen, says "hold fire" and flashes, and that the board is dimmed. After the delay the strip says "Your turn", the next tap fires, and the strip height does not change. A "landscape phone" check (844×390) keeps the strip on screen with row J at the bottom, and the win check confirms the strip names the winning shot. Actual result on `e820beb`: PASS.
 - Verifying commit: `11b3ea5`. Real-iPhone confirmation is pending Alex.
 
+### B10 — On a wide screen the enemy board sat lower than yours (usability / layout)
+- Found: 2026-10-10, by Alex in Safari on his Mac, live site (`cf28da9`): "It looks a bit lop sided now. The left is higher than the right."
+- Steps to reproduce (`cf28da9`): at desktop width (boards side by side), place your fleet and start a battle.
+- Expected: the two boards start at the same height.
+- Actual (`cf28da9`): the turn strip added for B9 sits above the enemy board only, so the enemy board started 58 px lower than yours once your fleet was placed and throughout the battle (6 px lower while placing, where the ↻ Turn next ship button partly balanced it). Measured in Chrome and in WebKit (Safari's engine).
+- Cause: B9 added a strip on one side only, with nothing matching on your side.
+- Fix: your board gets a matching strip of the same height when the ↻ Turn next ship button is not shown: "⚓ Fleet ready — press Start battle" once all ships are placed, then "⚓ Your fleet: 5 of 5 afloat" with the enemy's last shot at you during and after the battle. The button and both strips have the same fixed height. On phones the boards are stacked, so this only adds a status line above your board there.
+- Regression test: `node tools/check-hover-preview.mjs` gains a "side-by-side boards start level" check at 1280 px. On `cf28da9` it fails (offsets -6 / -58 / -58 px); with the fix it passes (0 / 0 / 0 px). The same 0 px result was measured in WebKit desktop.
+- Verifying commit: this PR.
+
 <!-- Template
 ### B<n> — short title
 - Found: date, milestone, how (test / manual check / review)

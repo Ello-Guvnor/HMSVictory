@@ -38,6 +38,7 @@ const el = {
   status: document.getElementById('status'),
   turn: document.getElementById('turn'),
   enemyTurn: document.getElementById('enemy-turn'),
+  playerTurn: document.getElementById('player-turn'),
   log: document.getElementById('shot-log'),
   rotate: document.getElementById('rotate-btn'),
   boardRotate: document.getElementById('board-rotate-btn'),
@@ -329,6 +330,23 @@ function renderEnemyTurn() {
   }
 }
 
+function renderPlayerTurn() {
+  const game = battle?.game ?? null;
+  const [main, detail] = el.playerTurn.children;
+  el.playerTurn.hidden = !el.boardRotate.hidden;
+  if (!game) {
+    main.textContent = '⚓ Fleet ready — press Start battle';
+    detail.textContent = 'Tap a ship to turn it';
+    return;
+  }
+  const afloat = game.boards[ROYAL_NAVY].ships.length - sunkShips(game, ROYAL_NAVY).length;
+  main.textContent = `⚓ Your fleet: ${afloat} of ${game.boards[ROYAL_NAVY].ships.length} afloat`;
+  const lastShot = shotsBy(game, FRANCO_SPANISH).at(-1);
+  detail.textContent = lastShot
+    ? `Their last shot: ${lastShot.coord}, ${lastShot.result === SUNK ? `sank ${lastShot.sunkShip}` : resultWord(lastShot.result)}`
+    : 'Awaiting their first shot';
+}
+
 function flashEnemyTurn() {
   el.enemyTurn.classList.remove('refused');
   void el.enemyTurn.offsetWidth;
@@ -382,6 +400,7 @@ function render() {
   renderEnemyTurn();
   renderLog();
   renderControls();
+  renderPlayerTurn();
 }
 
 function tryPlaceAt(row, col) {
