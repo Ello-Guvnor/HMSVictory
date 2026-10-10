@@ -42,16 +42,40 @@ function runThrough(cells, row, col, [dr, dc]) {
   return run;
 }
 
-// Hits that do not yet belong to a sunk ship. The strategy is told only that a
-// shot sank a ship, not which ship, so it assumes the sunk ship is the straight
-// run of open hits through the sinking shot (the longer run if both directions have one).
+// Straight runs of `length` open hits that include the sinking shot: the places
+// the sunk ship could have been.
+function sunkCandidates(open, row, col, length) {
+  const candidates = [];
+  for (const [dr, dc] of AXES) {
+    for (let back = 0; back < length; back += 1) {
+      const cells = [];
+      for (let i = 0; i < length; i += 1) cells.push({ row: row + dr * (i - back), col: col + dc * (i - back) });
+      if (cells.every((cell) => open.has(key(cell.row, cell.col)))) candidates.push(cells);
+    }
+  }
+  return candidates;
+}
+
+// Hits that do not yet belong to a sunk ship. A sinking shot may say how long the
+// sunk ship was (the game announces which ship sank). Only hits that are part of
+// every place it could have been are written off, so a hit on a touching ship stays
+// open. Without a length, the sunk ship is assumed to be the straight run of open
+// hits through the sinking shot (the longer run if both directions have one).
 function openHits(ownShots) {
   const open = new Set();
-  for (const { row, col, result } of ownShots) {
-    if (result === HIT) open.add(key(row, col));
+  for (const { row, col, result, sunkLength } of ownShots) {
+    if (result === HIT || result === SUNK) open.add(key(row, col));
     if (result !== SUNK) continue;
-    const runs = AXES.map((axis) => runThrough(open, row, col, axis));
-    const sunk = runs[0].length >= runs[1].length ? runs[0] : runs[1];
+    let sunk;
+    if (sunkLength) {
+      const candidates = sunkCandidates(open, row, col, sunkLength);
+      sunk = candidates.length === 0
+        ? [{ row, col }]
+        : candidates[0].filter((cell) => candidates.every((c) => c.some((o) => o.row === cell.row && o.col === cell.col)));
+    } else {
+      const runs = AXES.map((axis) => runThrough(open, row, col, axis));
+      sunk = runs[0].length >= runs[1].length ? runs[0] : runs[1];
+    }
     for (const cell of sunk) open.delete(key(cell.row, cell.col));
   }
   return [...open].map((k) => {
@@ -97,7 +121,8 @@ const byPosition = (a, b) => a.row - b.row || a.col - b.col;
 
 /**
  * Hunt-and-target computer strategy (not an AI or LLM).
- * Input: only the computer's own earlier shots, each { row, col, result }.
+ * Input: only the computer's own earlier shots, each { row, col, result }, plus
+ * sunkLength on a sinking shot: the announced sunk ship's length.
  * Target: after a hit, fire next to it, following the line once two hits line up.
  * Hunt: otherwise fire at a random untried square on a checkerboard pattern;
  * every ship is at least 2 long, so it always covers a checkerboard square.
