@@ -77,6 +77,8 @@ try {
   if (!aligned) failures += 1;
   console.log(`${aligned ? 'PASS' : 'FAIL'} squares under labels after Random placement: ship drawings=${alignment.art} misplaced=${alignment.misplaced.length}${alignment.misplaced.length ? ` (${alignment.misplaced.slice(0, 8).join(' ')}...)` : ''}`);
 
+  const controls = () => evaluate(`({ clear: !document.getElementById('clear-btn').disabled, restart: !document.getElementById('restart-btn').disabled })`);
+  const placingControls = await controls();
   const shotCell = `document.querySelector('#enemy-board .cell[data-row="5"][data-col="0"]')`;
   const shotPoint = await evaluate(`(() => {
     document.getElementById('start-btn').click();
@@ -86,6 +88,7 @@ try {
     const r = b.getBoundingClientRect();
     return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
   })()`);
+  const battleControls = await controls();
   await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: shotPoint.x, y: shotPoint.y });
   await sleep(200);
   const marked = await evaluate(`(() => { const b = ${shotCell}; return { hovered: b.matches(':hover'), result: b.classList.contains('hit') ? 'hit' : b.classList.contains('miss') ? 'miss' : 'none', image: getComputedStyle(b).backgroundImage }; })()`);
@@ -107,6 +110,18 @@ try {
   const won = ending.open && ending.royal && ending.title === 'Royal Navy Victory!' && !ending.waiting && ending.cursor !== 'wait';
   if (!won) failures += 1;
   console.log(`${won ? 'PASS' : 'FAIL'} winning shows the victory screen with no busy cursor: open=${ending.open} title="${ending.title}" waiting=${ending.waiting} cursor=${ending.cursor}`);
+
+  const overControls = await controls();
+  const orders = await evaluate(`document.querySelector('.instructions').textContent.replace(/\\s+/g, ' ')`);
+  const fmt = (c) => `clear=${c.clear ? 'on' : 'off'} restart=${c.restart ? 'on' : 'off'}`;
+  const statesOk = placingControls.clear && !placingControls.restart
+    && !battleControls.clear && battleControls.restart
+    && !overControls.clear && overControls.restart;
+  const ordersOk = !/at any time/i.test(orders)
+    && /Clear fleet removes all your ships so you can place them again; it works only while placing/.test(orders)
+    && /Restart unlocks once the battle begins and stays available after it ends/.test(orders);
+  if (!(statesOk && ordersOk)) failures += 1;
+  console.log(`${statesOk && ordersOk ? 'PASS' : 'FAIL'} Clear fleet / Restart availability matches the Orders: placing ${fmt(placingControls)}; battle ${fmt(battleControls)}; game over ${fmt(overControls)}; orders-wording-ok=${ordersOk}`);
   ws.close();
 } finally {
   const exited = new Promise((r) => chrome.once('exit', r));
