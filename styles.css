@@ -110,6 +110,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 .board-caption { margin: 0 0 0.5rem; font-size: 0.9rem; color: var(--brass-dark); }
+.board-rotate { display: block; margin: 0 0 0.5rem; min-height: 44px; }
+.board-rotate[hidden] { display: none; }
 
 .board {
   display: grid;

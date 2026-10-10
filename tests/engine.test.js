@@ -12,6 +12,7 @@ import {
   shipAt,
   validatePlacement,
   placeShip,
+  rotateShip,
   nextUnplacedShip,
   isFleetComplete,
   validateFleet,
@@ -261,4 +262,44 @@ test('Start check: duplicate or foreign ships are not valid', () => {
   assert.ok(validateFleet(duplicated, ROYAL_NAVY_FLEET).problems.includes('Swift is placed more than once'));
   const foreign = { ships: [...board.ships, { ...randomFleet(FRANCO_SPANISH_FLEET, createRng(1)).ships[0] }] };
   assert.ok(validateFleet(foreign, ROYAL_NAVY_FLEET).problems.includes('Santísima Trinidad is not part of this fleet'));
+});
+
+test('rotateShip turns a placed ship about its bow, keeping order and the original board', () => {
+  const board = mustPlace(mustPlace(createBoard(), victory, 0, 0, HORIZONTAL), swift, 9, 0, HORIZONTAL);
+  const result = rotateShip(board, 'victory');
+  assert.equal(result.ok, true);
+  assert.equal(result.ship.orientation, VERTICAL);
+  assert.deepEqual(result.ship.cells, shipCells(0, 0, 5, VERTICAL));
+  assert.deepEqual(result.board.ships.map((s) => s.id), ['victory', 'swift']);
+  assert.equal(board.ships[0].orientation, HORIZONTAL);
+  const back = rotateShip(result.board, 'victory');
+  assert.deepEqual(back.board, board);
+});
+
+test('rotateShip refuses turns that would leave the board or overlap, without changes', () => {
+  const nearEdge = mustPlace(createBoard(), sovereign, 7, 0, HORIZONTAL);
+  const offBoard = rotateShip(nearEdge, 'sovereign');
+  assert.equal(offBoard.ok, false);
+  assert.equal(offBoard.reason, 'off-board');
+  assert.equal(offBoard.orientation, VERTICAL);
+
+  const crowded = mustPlace(mustPlace(createBoard(), victory, 0, 0, HORIZONTAL), swift, 1, 0, HORIZONTAL);
+  const overlap = rotateShip(crowded, 'victory');
+  assert.equal(overlap.ok, false);
+  assert.equal(overlap.reason, 'overlap');
+  assert.equal(overlap.overlapsWith, 'Swift');
+  assert.equal(crowded.ships[0].orientation, HORIZONTAL);
+});
+
+test('rotateShip reports a ship that is not on the board', () => {
+  assert.deepEqual(rotateShip(createBoard(), 'victory'), { ok: false, reason: 'not-placed' });
+});
+
+test('a rotated fleet still passes full-fleet validation', () => {
+  let board = randomFleet(ROYAL_NAVY_FLEET, createRng(7));
+  for (const ship of ROYAL_NAVY_FLEET) {
+    const result = rotateShip(board, ship.id);
+    if (result.ok) board = result.board;
+  }
+  assert.equal(validateFleet(board, ROYAL_NAVY_FLEET).ok, true);
 });
