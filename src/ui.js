@@ -12,6 +12,7 @@ import {
   shipCells,
   validatePlacement,
   placeShip,
+  rotateShip,
   nextUnplacedShip,
   validateFleet,
   randomFleet,
@@ -38,6 +39,7 @@ const el = {
   turn: document.getElementById('turn'),
   log: document.getElementById('shot-log'),
   rotate: document.getElementById('rotate-btn'),
+  boardRotate: document.getElementById('board-rotate-btn'),
   random: document.getElementById('random-btn'),
   ending: document.getElementById('ending'),
   clear: document.getElementById('clear-btn'),
@@ -124,6 +126,7 @@ function previewCells() {
   const next = nextUnplacedShip(state.player, ROYAL_NAVY_FLEET);
   if (!next) return null;
   const { row, col } = state.hover;
+  if (shipAt(state.player, row, col)) return null;
   const result = validatePlacement(state.player, next, row, col, state.orientation);
   const cells = shipCells(row, col, next.length, state.orientation).filter((c) => isOnBoard(c.row, c.col));
   return { ok: result.ok, cells };
@@ -144,6 +147,7 @@ function renderPlayerBoard() {
   const previewKeys = new Set(preview ? preview.cells.map((c) => `${c.row},${c.col}`) : []);
   const next = nextUnplacedShip(state.player, ROYAL_NAVY_FLEET);
   const placing = state.phase === PLACEMENT && next !== null;
+  const arranging = state.phase === PLACEMENT;
   const game = battle?.game ?? null;
 
   for (let row = 0; row < BOARD_SIZE; row += 1) {
@@ -158,6 +162,7 @@ function renderPlayerBoard() {
         const index = ship.cells.findIndex((c) => c.row === row && c.col === col);
         button.classList.add('ship');
         label += `, ${ship.name}${index === 0 ? ' (bow)' : ''}`;
+        if (arranging) label += ', select to turn it';
       } else {
         label += ', open water';
       }
@@ -170,14 +175,14 @@ function renderPlayerBoard() {
       if (previewKeys.has(`${row},${col}`)) {
         button.classList.add(preview.ok ? 'preview-ok' : 'preview-bad');
       }
-      if (placing) {
+      if (placing && !ship) {
         const check = validatePlacement(state.player, next, row, col, state.orientation);
         label += `. ${next.name} here, ${orientationWord(state.orientation)}: `;
         label += check.ok ? 'allowed' : `not allowed, ${describeRejection(next, check)}`;
       }
       button.setAttribute('aria-label', label);
-      button.disabled = !placing;
-      button.tabIndex = placing && row === state.focus.row && col === state.focus.col ? 0 : -1;
+      button.disabled = !arranging;
+      button.tabIndex = arranging && row === state.focus.row && col === state.focus.col ? 0 : -1;
     }
   }
   renderShipArt(el.playerBoard, state.player.ships, () => 'royal');
@@ -329,6 +334,8 @@ function renderControls() {
   const placing = state.phase === PLACEMENT;
   el.rotate.textContent = `Rotate (R): ${state.orientation === HORIZONTAL ? 'Horizontal' : 'Vertical'}`;
   el.rotate.disabled = !placing;
+  el.boardRotate.textContent = `↻ Turn next ship: ${state.orientation === HORIZONTAL ? 'Horizontal →' : 'Vertical ↓'}`;
+  el.boardRotate.hidden = !placing || !nextUnplacedShip(state.player, ROYAL_NAVY_FLEET);
   el.random.disabled = !placing;
   el.clear.disabled = !placing;
   el.start.disabled = !placing || !validateFleet(state.player, ROYAL_NAVY_FLEET).ok;
@@ -365,6 +372,18 @@ function tryPlaceAt(row, col) {
     setStatus(`${placedMsg} Royal Navy Fleet ready. Press Start battle, or Clear fleet to rearrange.`);
     el.start.focus();
   }
+}
+
+function turnPlacedShip(ship) {
+  const result = rotateShip(state.player, ship.id);
+  if (!result.ok) {
+    render();
+    setStatus(`${ship.name} can't turn ${orientationWord(result.orientation)} there: ${describeRejection(ship, result)}`, true);
+    return;
+  }
+  state.player = result.board;
+  render();
+  setStatus(`${ship.name} turned ${orientationWord(result.ship.orientation)}. Tap any of its squares to turn it back.`);
 }
 
 function setOrientation(orientation) {
@@ -589,7 +608,9 @@ el.playerBoard.addEventListener('click', (event) => {
   const row = Number(button.dataset.row);
   const col = Number(button.dataset.col);
   state.focus = { row, col };
-  tryPlaceAt(row, col);
+  const ship = state.phase === PLACEMENT ? shipAt(state.player, row, col) : null;
+  if (ship) turnPlacedShip(ship);
+  else tryPlaceAt(row, col);
 });
 
 el.enemyBoard.addEventListener('click', (event) => {
@@ -669,6 +690,7 @@ document.addEventListener('keydown', (event) => {
 });
 
 el.rotate.addEventListener('click', rotate);
+el.boardRotate.addEventListener('click', rotate);
 
 el.random.addEventListener('click', () => {
   if (state.phase !== PLACEMENT) return;

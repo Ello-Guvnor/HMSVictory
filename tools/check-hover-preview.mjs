@@ -58,6 +58,40 @@ try {
     console.log(`${ok ? 'PASS' : 'FAIL'} ${c.label}: hovered=${info.hovered} ${c.expectClass}=${info.hasClass} hovered-bg=${info.bg} neighbour-bg=${info.neighbourBg}`);
   }
 
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+  await sleep(300);
+  const tap = async (selector) => {
+    const p = await evaluate(`(() => { const b = document.querySelector('${selector}'); b.scrollIntoView({ block: 'center' }); const r = b.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`);
+    await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: p.x, y: p.y }] });
+    await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await sleep(400);
+  };
+  const victoryCells = () => evaluate(`[...document.querySelectorAll('#player-board .cell')].filter((b) => b.classList.contains('ship') && /^[A-J]\\d+, Victory/.test(b.getAttribute('aria-label'))).map((b) => b.dataset.row + b.dataset.col).join(' ')`);
+  await evaluate(`document.getElementById('clear-btn').click()`);
+  const turnButton = await evaluate(`(() => { const b = document.getElementById('board-rotate-btn'); const board = document.getElementById('player-board').getBoundingClientRect(); const r = b.getBoundingClientRect(); return { visible: !b.hidden && r.height >= 44, aboveBoard: r.bottom <= board.top + 1 && board.top - r.bottom < 80 }; })()`);
+  await tap('#board-rotate-btn');
+  await tap('#player-board .cell[data-row="2"][data-col="2"]');
+  const tappedVertical = await victoryCells();
+  await tap('#player-board .cell[data-row="4"][data-col="2"]');
+  const turnedHorizontal = await victoryCells();
+  const refusedEdge = await (async () => {
+    await evaluate(`document.getElementById('clear-btn').click()`);
+    if (!(await evaluate(`/Vertical/.test(document.getElementById('board-rotate-btn').textContent)`))) await tap('#board-rotate-btn');
+    await tap('#player-board .cell[data-row="0"][data-col="9"]');
+    await tap('#player-board .cell[data-row="0"][data-col="9"]');
+    return evaluate(`({ cells: [...document.querySelectorAll('#player-board .cell')].filter((b) => b.classList.contains('ship') && /^[A-J]\\d+, Victory/.test(b.getAttribute('aria-label'))).map((b) => b.dataset.row + b.dataset.col).join(' '), status: document.getElementById('status').textContent })`);
+  })();
+  const touchOk = turnButton.visible && turnButton.aboveBoard
+    && tappedVertical === '22 32 42 52 62' && turnedHorizontal === '22 23 24 25 26'
+    && refusedEdge.cells === '09 19 29 39 49' && /can't turn horizontal/.test(refusedEdge.status);
+  if (!touchOk) failures += 1;
+  console.log(`${touchOk ? 'PASS' : 'FAIL'} phone taps: turn button visible=${turnButton.visible} above-board=${turnButton.aboveBoard}; placed vertical=${tappedVertical}; tap ship -> ${turnedHorizontal}; edge refusal keeps ${refusedEdge.cells} ("${refusedEdge.status}")`);
+  await evaluate(`document.getElementById('clear-btn').click()`);
+  await send('Emulation.setTouchEmulationEnabled', { enabled: false });
+  await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 1000, deviceScaleFactor: 1, mobile: false });
+  await sleep(300);
+
   const alignment = await evaluate(`(() => {
     document.getElementById('random-btn').click();
     const board = document.getElementById('player-board');

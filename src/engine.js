@@ -73,6 +73,18 @@ export function placeShip(board, spec, row, col, orientation) {
   return { ok: true, ship, board: { ships: [...board.ships, ship] } };
 }
 
+export function rotateShip(board, shipId) {
+  const ship = board.ships.find((s) => s.id === shipId);
+  if (!ship) return { ok: false, reason: 'not-placed' };
+  const others = { ships: board.ships.filter((s) => s.id !== shipId) };
+  const orientation = ship.orientation === HORIZONTAL ? VERTICAL : HORIZONTAL;
+  const { row, col } = ship.cells[0];
+  const result = validatePlacement(others, ship, row, col, orientation);
+  if (!result.ok) return { ...result, orientation };
+  const turned = { ...ship, orientation, cells: result.cells };
+  return { ok: true, ship: turned, board: { ships: board.ships.map((s) => (s.id === shipId ? turned : s)) } };
+}
+
 export function nextUnplacedShip(board, fleet) {
   return fleet.find((spec) => !board.ships.some((ship) => ship.id === spec.id)) ?? null;
 }
