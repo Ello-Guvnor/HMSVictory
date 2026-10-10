@@ -113,8 +113,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .board {
   display: grid;
-  grid-template-columns: repeat(11, var(--cell));
-  grid-template-rows: repeat(11, var(--cell));
+  grid-template-columns: calc(var(--cell) * 0.7) repeat(10, var(--cell));
+  grid-template-rows: calc(var(--cell) * 0.7) repeat(10, var(--cell));
   width: max-content;
 }
 
@@ -211,6 +211,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 @media (max-width: 760px) {
+  :root { --cell: clamp(26px, calc((100vw - 44px) / 10.7), 40px); }
   main { padding: 0.5rem; }
   .board-panel { padding: 0.5rem; }
 }
