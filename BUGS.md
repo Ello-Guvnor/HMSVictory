@@ -109,6 +109,16 @@ Only defects actually observed are logged here. Each entry has: reproduction ste
 - Regression test: `node tools/check-hover-preview.mjs` gains a "side-by-side boards start level" check at 1280 px. On `cf28da9` it fails (offsets -6 / -58 / -58 px); with the fix it passes (0 / 0 / 0 px). The same 0 px result was measured in WebKit desktop.
 - Verifying commit: this PR.
 
+### B11 — After sinking a ship, the computer could forget a hit on a touching ship (computer strategy)
+- Found: 2026-10-09, Milestone 3. Seen in simulated games and flagged by Devin Review on https://github.com/Ello-Guvnor/HMSVictory/pull/4; recorded then as the D21 tradeoff, not as a bug. Reproduced with a deterministic test on 2026-10-10 at Alex's request.
+- Steps to reproduce (`232e382`): Swift on A1–A2 touches Vanguard on A3–A5. The computer's shots: A3 hit (Vanguard), A2 hit (Swift), A1 sinks Swift. Ask it for its next shot.
+- Expected: it fires next to A3 (A4 or B3) to finish Vanguard.
+- Actual (`232e382`): it goes back to hunting elsewhere (G5 in the test). It comes back to A3 only once the checkerboard is used up. Over 1,000 simulated random fleets, 165 games had at least one hunting shot while a hit ship was still afloat (2,677 such shots in total).
+- Cause: the computer was told only that a shot sank a ship, not which one. It guessed that the sunk ship was the whole straight run of hits through the sinking shot. When ships touch end to end, that run also contains the other ship's hits, so those were written off as sunk.
+- Fix (`60951b2`): when a ship sinks, the computer is also told the sunk ship's length. The game already announces which ship sank, and every ship's length is public. It writes off only the hits that belong to every possible position of a ship of that length through the sinking shot. If two positions are possible, the extra hits stay open and are chased, which can cost a few shots but never loses a hit. It is still never shown where any unsunk ship is (D28).
+- Regression test: 4 new `npm test` cases: the A1–A3 reproduction above; a sinking that could be either of two lines; a full-game check on three touching layouts (end to end in rows, end to end in columns, side by side; 200 seeds each); and the same check on 500 random fleets. The full-game checks fail if the computer ever hunts while a hit ship is afloat, or repeats a square. A battle test confirms the computer receives exactly `{ row, col, result }`, plus `sunkLength` on a sinking that matches the announced ship. With the tests added to `232e382` (commit `4cfed0e`), 4 of 73 fail; with the fix, 73 of 73 pass. Over 1,000 simulated random fleets: 0 hunting shots while a hit ship was afloat, 0 repeats, an average of 50.9 shots to win (was 52.6), median 52 (was 53), range 21–68 (was 28–75). `node tools/check-hover-preview.mjs` passes 10 of 10, and a full browser game the computer won (62 shots) had no page errors.
+- Verifying commit: `60951b2`.
+
 <!-- Template
 ### B<n> — short title
 - Found: date, milestone, how (test / manual check / review)
