@@ -79,6 +79,16 @@ Only defects actually observed are logged here. Each entry has: reproduction ste
 - Regression test: `node tools/check-hover-preview.mjs http://localhost:8000` now reads both buttons while placing, during battle and at game over, and checks the Orders wording. Actual results: with the `769fadf` page FAIL (`placing clear=on restart=off; battle clear=off restart=on; game over clear=off restart=on; orders-wording-ok=false`); `e6bda40` PASS (same states, `orders-wording-ok=true`).
 - Verifying commit: `e6bda40`.
 
+### B8 — On an iPhone there was no visible way to turn ships (usability)
+- Found: 2026-10-10, by Alex playing the live site (https://ello-guvnor.github.io/HMSVictory/) on his iPhone after the release: "I could place them but I couldn't make them go vertical or horizontal."
+- Steps to reproduce (`587f8dd`): open the game on a phone, scroll to the Royal Navy Fleet board and tap squares to place ships; try to make a ship vertical.
+- Expected: a phone player can choose each ship's direction, and fix one already placed.
+- Actual (`587f8dd`): ships could be placed but not turned from the board. Tapping a placed ship only showed "would overlap". Not reproduced on a real iPhone by Devin; confirmed by reading the code and in Chrome phone emulation.
+- Cause (likely): the only touch control for direction was the Rotate button in the Orders panel, well above the board on a phone screen; R and the arrow keys need a keyboard; phones have no hover preview, so changing direction gave no visible sign at the board; and a placed ship could not be turned at all.
+- Fix (`25c26b3`): a "↻ Turn next ship: Horizontal →/Vertical ↓" button directly above your board while ships remain, and tapping (or clicking, or Enter on) a placed ship turns it about its first square if the turn is legal; otherwise the status explains why and the ship stays put. New engine function `rotateShip` keeps the rule out of the page code.
+- Regression test: 4 new `npm test` cases for `rotateShip` (turn and turn back, off-board and overlap refusals, missing ship, rotated fleet still valid); `node tools/check-hover-preview.mjs` gains a "phone taps" check (390px, touch emulation) that taps the Turn button, places Victory vertically, taps it to turn it horizontal, and confirms a turn off the board is refused. Actual result on `25c26b3`: PASS.
+- Verifying commit: `25c26b3`. Real-iPhone confirmation is pending Alex.
+
 <!-- Template
 ### B<n> — short title
 - Found: date, milestone, how (test / manual check / review)

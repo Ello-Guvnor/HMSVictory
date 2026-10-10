@@ -35,6 +35,7 @@ Recorded verbatim in SPEC.md (game spec and opening-brief working rules).
 | D23 | 2026-10-09 | MIT licence (requested by Alex), copyright "Alex Price". Reuse check: no third-party code, fonts, images or libraries are included; ships, flags and effects are original inline SVG/CSS (the flags are simplified drawings of historical public-domain designs); Nelson's 1805 signal is a historical quotation. Nothing found that would prevent MIT. | Requested by Alex; copyright holder proposed (Devin) |
 | D24 | 2026-10-09 | Deployment: a GitHub Actions workflow runs `npm test` on each push to `main`, copies only `index.html`, `styles.css`, `src/` and `LICENSE` into the site (no tests or dev tools), and publishes it with GitHub Pages. Needs Alex to set Pages to "GitHub Actions" and to merge the milestone PRs into `main`. | Proposed (Devin) |
 | D25 | 2026-10-09 | Mobile tap targets: on screens up to 760px wide the board squares now grow to fill the width (about 32px each on a 390px phone, up from 28px), and the coordinate labels take a narrower strip. 44px squares cannot fit two 10-square rows of a board on a phone, so this meets WCAG 2.2's 24px minimum, not the 44px guideline. | Proposed (Devin) |
+| D26 | 2026-10-10 | Turning ships on a phone (B8, at Alex's request "lets fix this"): a Turn button sits right above the Royal Navy board while placing, and tapping a placed ship turns it about its first square if that is legal. Clicking a placed ship on desktop now turns it instead of showing an overlap message. | Proposed (Devin) |
 
 ## Questions raised by Alex
 
