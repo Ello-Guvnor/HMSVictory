@@ -89,6 +89,16 @@ Only defects actually observed are logged here. Each entry has: reproduction ste
 - Regression test: 4 new `npm test` cases for `rotateShip` (turn and turn back, off-board and overlap refusals, missing ship, rotated fleet still valid); `node tools/check-hover-preview.mjs` gains a "phone taps" check (390px, touch emulation) that taps the Turn button, places Victory vertically, taps it to turn it horizontal, and confirms a turn off the board is refused. Actual result on `25c26b3`: PASS.
 - Verifying commit: `25c26b3`. Real-iPhone confirmation is pending Alex.
 
+### B9 — On a phone, taps on the enemy board seemed to be ignored (usability)
+- Found: 2026-10-10, by Alex playing the live site on his iPhone: "sometimes when i tried to fire a shot on the mobile it didn't catch it and then i had to tap the square that i wanted to fire at again. happened a few times."
+- Steps to reproduce (`3e1ea1a`): Chrome phone emulation, 390×844 with touch. Start a battle, scroll so the Franco-Spanish board fills the screen, and tap a square, then another one less than about a second later.
+- Expected: it is clear whether a tap fired, and when you can fire again.
+- Actual (`3e1ea1a`): the second tap was refused with "Hold fire — the Franco-Spanish Fleet is firing." But that message, the turn banner and your own board were all off screen, so the tap simply looked ignored. Measured: 7 of 16 taps spaced 0.3–0.9 s apart were refused; 0 of 12 taps spaced 1.1 s or more were refused. Not reproduced on a real iPhone by Devin.
+- Cause (likely): by design (SPEC, D17), taps during the computer's 0.8 s turn are refused. On a phone the only signs of that turn were above or below the enemy board, out of view, and the busy cursor does not exist on touch screens.
+- Fix (`11b3ea5`): a strip directly above the enemy board shows "▶ Your turn — tap a square to fire" or "… Enemy firing — hold fire", plus the last shot ("They fired at C1: miss"). During the enemy's turn the board's squares dim. A refused tap makes the strip shake with a red outline (a static outline with reduced motion). Follow-up (`e820beb`, from Devin Review): the strip stays pinned to the top of the screen while the board is scrolled, which matters on short or landscape screens; at game over it shows the final shot; and the reduced-motion outline clears on the next update. Turn rules and the 0.8 s delay are unchanged. `touch-action: manipulation` was also added to the boards so quick taps cannot be taken as a double-tap zoom. That is a precaution for iPhone Safari; it was not observed in Chrome.
+- Regression test: `node tools/check-hover-preview.mjs` gains a "phone firing" check (390px, touch emulation). It taps twice quickly and confirms that only one shot fires, that the strip is on screen, says "hold fire" and flashes, and that the board is dimmed. After the delay the strip says "Your turn", the next tap fires, and the strip height does not change. A "landscape phone" check (844×390) keeps the strip on screen with row J at the bottom, and the win check confirms the strip names the winning shot. Actual result on `e820beb`: PASS.
+- Verifying commit: `11b3ea5`. Real-iPhone confirmation is pending Alex.
+
 <!-- Template
 ### B<n> — short title
 - Found: date, milestone, how (test / manual check / review)

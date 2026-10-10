@@ -2,6 +2,7 @@
 // Verifies the square under the pointer shows the same preview colour as the rest of the preview,
 // that board squares stay under their coordinate labels once ship drawings are on the board,
 // that a fired-at square keeps its hit or miss marking while the pointer is over it,
+// that on a phone the strip above the enemy board shows whose turn it is and flags a tap refused during the enemy's turn,
 // and that winning shows the Royal Navy victory screen without a busy cursor on the enemy board.
 // Usage: node tools/check-hover-preview.mjs [baseUrl]   (default http://localhost:8000)
 import { spawn } from 'node:child_process';
@@ -87,7 +88,37 @@ try {
     && refusedEdge.cells === '09 19 29 39 49' && /can't turn horizontal/.test(refusedEdge.status);
   if (!touchOk) failures += 1;
   console.log(`${touchOk ? 'PASS' : 'FAIL'} phone taps: turn button visible=${turnButton.visible} above-board=${turnButton.aboveBoard}; placed vertical=${tappedVertical}; tap ship -> ${turnedHorizontal}; edge refusal keeps ${refusedEdge.cells} ("${refusedEdge.status}")`);
-  await evaluate(`document.getElementById('clear-btn').click()`);
+  await evaluate(`document.getElementById('random-btn').click(); document.getElementById('start-btn').click(); document.getElementById('enemy-board').scrollIntoView({ block: 'center' })`);
+  await sleep(300);
+  const quickTap = async (row, col) => {
+    const p = await evaluate(`(() => { const r = document.querySelector('#enemy-board .cell[data-row="${row}"][data-col="${col}"]').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`);
+    await send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: p.x, y: p.y }] });
+    await send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await sleep(50);
+  };
+  const strip = () => evaluate(`(() => { const s = document.getElementById('enemy-turn'); const r = s.getBoundingClientRect(); return { text: s.textContent, ours: s.classList.contains('ours'), theirs: s.classList.contains('theirs'), refused: s.classList.contains('refused'), inView: r.top >= 0 && r.bottom <= innerHeight, height: Math.round(r.height), shots: document.querySelectorAll('#enemy-board .cell.hit, #enemy-board .cell.miss').length, dimmed: getComputedStyle(document.querySelector('#enemy-board .cell')).filter !== 'none' }; })()`);
+  const ready = await strip();
+  await quickTap(0, 0);
+  await quickTap(0, 1);
+  const waiting = await strip();
+  await sleep(1200);
+  const back = await strip();
+  await quickTap(0, 1);
+  const fired = await strip();
+  const fireOk = ready.ours && ready.inView && /Your turn/.test(ready.text)
+    && waiting.shots === 1 && waiting.theirs && waiting.refused && waiting.inView && waiting.dimmed && /hold fire/.test(waiting.text) && /Your shot at A1/.test(waiting.text)
+    && back.ours && !back.dimmed && /They fired at [A-J]\d+/.test(back.text) && fired.shots === 2
+    && ready.height === waiting.height && waiting.height === back.height;
+  if (!fireOk) failures += 1;
+  console.log(`${fireOk ? 'PASS' : 'FAIL'} phone firing: strip in view=${ready.inView}/${waiting.inView}; tap during enemy turn refused=${waiting.shots === 1} flashed=${waiting.refused} dimmed=${waiting.dimmed} ("${waiting.text}"); after delay "${back.text}"; next tap fired=${fired.shots === 2}; strip height ${ready.height}/${waiting.height}/${back.height}px`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 844, height: 390, deviceScaleFactor: 2, mobile: true });
+  await sleep(300);
+  const landscape = await evaluate(`(() => { document.querySelector('#enemy-board .cell[data-row="9"][data-col="9"]').scrollIntoView({ block: 'end' }); const s = document.getElementById('enemy-turn').getBoundingClientRect(); return s.top >= 0 && s.bottom <= innerHeight; })()`);
+  if (!landscape) failures += 1;
+  console.log(`${landscape ? 'PASS' : 'FAIL'} landscape phone (844x390): turn strip stays in view with row J at the bottom of the screen`);
+  await send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+  await send('Page.navigate', { url: `${baseUrl}/?seed=42` });
+  await sleep(1500);
   await send('Emulation.setTouchEmulationEnabled', { enabled: false });
   await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 1000, deviceScaleFactor: 1, mobile: false });
   await sleep(300);
@@ -139,11 +170,12 @@ try {
   const ending = await evaluate(`(() => {
     const d = document.getElementById('ending');
     const cell = document.querySelector('#enemy-board .cell');
-    return { open: d.open, royal: d.classList.contains('royal'), title: d.querySelector('h2')?.textContent ?? '', waiting: document.getElementById('enemy-board').classList.contains('waiting'), cursor: getComputedStyle(cell).cursor };
+    return { open: d.open, royal: d.classList.contains('royal'), title: d.querySelector('h2')?.textContent ?? '', waiting: document.getElementById('enemy-board').classList.contains('waiting'), cursor: getComputedStyle(cell).cursor, strip: document.getElementById('enemy-turn').textContent };
   })()`);
-  const won = ending.open && ending.royal && ending.title === 'Royal Navy Victory!' && !ending.waiting && ending.cursor !== 'wait';
+  const lastCoord = `${'ABCDEFGHIJ'[enemyShips.at(-1).row]}${enemyShips.at(-1).col + 1}`;
+  const won = ending.open && ending.royal && ending.title === 'Royal Navy Victory!' && !ending.waiting && ending.cursor !== 'wait' && ending.strip.includes(`Your shot at ${lastCoord}`);
   if (!won) failures += 1;
-  console.log(`${won ? 'PASS' : 'FAIL'} winning shows the victory screen with no busy cursor: open=${ending.open} title="${ending.title}" waiting=${ending.waiting} cursor=${ending.cursor}`);
+  console.log(`${won ? 'PASS' : 'FAIL'} winning shows the victory screen with no busy cursor: open=${ending.open} title="${ending.title}" waiting=${ending.waiting} cursor=${ending.cursor} strip="${ending.strip}"`);
 
   const overControls = await controls();
   const orders = await evaluate(`document.querySelector('.instructions').textContent.replace(/\\s+/g, ' ')`);

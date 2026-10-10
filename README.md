@@ -13,7 +13,7 @@ Milestones 1–3 (placement, game rules, computer strategy) are accepted; Milest
 ## How to play
 
 1. Place your five ships on the **Royal Navy Fleet** board: click a square (ships run right or down from it), press **Rotate**, **↻ Turn next ship** (just above your board) or <kbd>R</kbd> to switch direction, or press **Random placement**. Click or tap a ship you have already placed to turn it; it pivots on its first square.
-2. Press **Start battle**, then click or tap squares on the **Franco-Spanish Fleet** board to fire. You fire first; the sides alternate one shot each, including after a hit.
+2. Press **Start battle**, then click or tap squares on the **Franco-Spanish Fleet** board to fire. You fire first; the sides alternate one shot each, including after a hit. The strip just above the enemy board shows whose turn it is and the last shot; while the enemy is firing (about a second) the board dims and taps are refused, so wait for "Your turn".
 3. **Clear fleet** removes all your ships; it works only while placing. **Restart** is locked until the battle begins, then stays available during and after the battle. It cancels any pending computer shot and returns you to placing ships.
 4. ✕ = hit, • = miss, brass outline = sunk. The Battle log lists every shot. Sink all five enemy ships to win.
 5. Keyboard only: <kbd>Tab</kbd> to a board, arrow keys to move, <kbd>Enter</kbd>/<kbd>Space</kbd> to place or fire, <kbd>R</kbd> to rotate, <kbd>Esc</kbd> to close the end-of-game card.

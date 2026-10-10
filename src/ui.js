@@ -37,6 +37,7 @@ const el = {
   enemyRoster: document.getElementById('enemy-roster'),
   status: document.getElementById('status'),
   turn: document.getElementById('turn'),
+  enemyTurn: document.getElementById('enemy-turn'),
   log: document.getElementById('shot-log'),
   rotate: document.getElementById('rotate-btn'),
   boardRotate: document.getElementById('board-rotate-btn'),
@@ -303,6 +304,37 @@ function renderTurn() {
   }
 }
 
+function renderEnemyTurn() {
+  const game = battle?.game ?? null;
+  const [main, detail] = el.enemyTurn.children;
+  el.enemyTurn.classList.remove('ours', 'theirs', 'refused');
+  const theirTurn = game && !game.winner && game.turn !== ROYAL_NAVY;
+  const lastShot = !game ? null
+    : game.winner ? game.history.at(-1)
+    : shotsBy(game, theirTurn ? ROYAL_NAVY : FRANCO_SPANISH).at(-1);
+  const outcome = lastShot && (lastShot.result === SUNK ? `sank ${lastShot.sunkShip}` : resultWord(lastShot.result));
+  detail.textContent = lastShot
+    ? `${lastShot.shooter === ROYAL_NAVY ? 'Your shot at' : 'They fired at'} ${lastShot.coord}: ${outcome}`
+    : '\u00a0';
+  if (!game) {
+    main.textContent = 'Place your fleet, then Start battle';
+  } else if (game.winner) {
+    main.textContent = game.winner === ROYAL_NAVY ? '⚓ Royal Navy victory' : '✕ Your fleet has been defeated';
+  } else if (game.turn === ROYAL_NAVY) {
+    main.textContent = '▶ Your turn — tap a square to fire';
+    el.enemyTurn.classList.add('ours');
+  } else {
+    main.textContent = '… Enemy firing — hold fire';
+    el.enemyTurn.classList.add('theirs');
+  }
+}
+
+function flashEnemyTurn() {
+  el.enemyTurn.classList.remove('refused');
+  void el.enemyTurn.offsetWidth;
+  el.enemyTurn.classList.add('refused');
+}
+
 function logEntryText(shot) {
   const who = shot.shooter === ROYAL_NAVY ? 'Royal Navy' : 'Franco-Spanish';
   let text = `${shot.number}. ${who} → ${shot.coord}: ${shot.result === MISS ? '• miss' : '✕ hit'}`;
@@ -347,6 +379,7 @@ function render() {
   renderEnemyBoard();
   renderRosters();
   renderTurn();
+  renderEnemyTurn();
   renderLog();
   renderControls();
 }
@@ -544,6 +577,7 @@ function playerFireAt(row, col) {
   const outcome = battle.playerFire(row, col);
   if (!outcome.ok) {
     renderEnemyBoard();
+    flashEnemyTurn();
     if (outcome.reason === 'repeat') setStatus(`You have already fired at ${outcome.coord}. Choose another square — it is still your turn.`, true);
     else if (outcome.reason === 'not-your-turn') setStatus('Hold fire — the Franco-Spanish Fleet is firing.', true);
     else if (outcome.reason === 'game-over') setStatus('The battle is over. Press Restart to play again.', true);
@@ -595,6 +629,8 @@ el.ending.addEventListener('click', (event) => {
 el.ending.addEventListener('close', () => {
   if (state.phase === OVER) el.restart.focus();
 });
+
+el.enemyTurn.addEventListener('animationend', () => el.enemyTurn.classList.remove('refused'));
 
 for (const boardEl of [el.playerBoard, el.enemyBoard]) {
   boardEl.addEventListener('animationend', (event) => {
