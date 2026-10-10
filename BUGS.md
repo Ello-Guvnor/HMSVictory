@@ -69,6 +69,16 @@ Only defects actually observed are logged here. Each entry has: reproduction ste
 - Regression test: `node tools/check-hover-preview.mjs http://localhost:8000` now plays a seeded game to a win and checks the enemy board is not busy and its cursor is not `wait`. Actual results: with the old check FAIL (`waiting=true cursor=wait`); `9cd226e` PASS (`waiting=false cursor=pointer`).
 - Verifying commit: `9cd226e`.
 
+### B7 — On-page instructions said Restart works "at any time" (usability / documentation)
+- Found: 2026-10-09, Milestone 4 review. Devin Review flag "Restart instructions overstate availability" on https://github.com/Ello-Guvnor/HMSVictory/pull/5, raised for Alex's attention and confirmed in the browser on commit `769fadf`.
+- Steps to reproduce: open the game and read the Orders ("Restart starts a new game at any time"), then look at the Restart button while placing ships.
+- Expected: the instructions describe the controls as they behave.
+- Actual (`769fadf`): Restart is greyed out (disabled) while placing ships; it only unlocks once the battle starts and stays available after it ends. Clear fleet works only while placing, which the Orders did not mention.
+- Cause: the instruction line was written for Milestone 4 without checking the button states; the controls behave as designed (D18).
+- Fix (`e6bda40`): wording only; the controls are unchanged. The Orders now say Clear fleet "works only while placing" and that Restart "unlocks once the battle begins and stays available after it ends … Before battle, use Clear fleet instead." The README's "How to play" says the same.
+- Regression test: `node tools/check-hover-preview.mjs http://localhost:8000` now reads both buttons while placing, during battle and at game over, and checks the Orders wording. Actual results: with the `769fadf` page FAIL (`placing clear=on restart=off; battle clear=off restart=on; game over clear=off restart=on; orders-wording-ok=false`); `e6bda40` PASS (same states, `orders-wording-ok=true`).
+- Verifying commit: `e6bda40`.
+
 <!-- Template
 ### B<n> — short title
 - Found: date, milestone, how (test / manual check / review)
