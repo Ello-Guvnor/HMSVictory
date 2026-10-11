@@ -135,6 +135,6 @@ Only defects actually observed are logged here. Each entry has: reproduction ste
 
 Things that have not been verified yet. Moved or removed once checked.
 
-- Alex has played the live site on his iPhone and confirmed that turning ships (B8) and firing (B9) work. Devin's own mobile checks use Chrome's phone-size emulation (390×844, touch). Other phones and desktop Safari/Firefox have not been tested.
+- Tested by Alex: the live site on his iPhone (he confirmed that turning ships (B8) and firing (B9) work) and on his Mac in Chrome and Safari. Devin's own checks use Chrome on Linux, including phone-size emulation (390×844, touch). Firefox and other phones have not been tested.
 - Spoken screen-reader output (e.g. VoiceOver, NVDA) has not been tested. Only the labels in the accessibility tree were checked.
 - On touch screens there is no hover preview: a tap places the ship at once. Clear fleet is the only way to undo.
