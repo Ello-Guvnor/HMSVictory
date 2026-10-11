@@ -8,7 +8,12 @@ Plain HTML, CSS and JavaScript. No runtime libraries, no backend, no login.
 
 ## Status
 
-Milestones 1–3 (placement, game rules, computer strategy) are accepted; Milestone 4 (release) is in progress. See [PLAN.md](PLAN.md).
+Released. All four milestones (placement, game rules, computer strategy, release) are done; see [PLAN.md](PLAN.md).
+
+- Play: https://ello-guvnor.github.io/HMSVictory/
+- Source: https://github.com/Ello-Guvnor/HMSVictory
+- Bugs found and how they were fixed: [BUGS.md](BUGS.md)
+- Known limitations (not yet tested): the "Untested risks" list at the end of [BUGS.md](BUGS.md#untested-risks-not-bugs)
 
 ## How to play
 

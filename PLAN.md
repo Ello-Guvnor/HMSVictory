@@ -59,11 +59,11 @@ Acceptance criteria (built and verified in the Milestone 3 PR; milestone done on
 
 Plan: polish, accessibility and mobile checks, documentation, and a free public deployment.
 
-Acceptance criteria:
-- [ ] Usable on desktop and a phone-sized screen (checked in the browser at both sizes; screenshots in the PR).
-- [ ] Keyboard-only play works end to end.
-- [ ] README explains how to play, how to run tests, and how it is deployed.
-- [ ] BUGS.md lists only observed defects, each with repro, expected vs actual, cause, fix, regression test, commit; untested risks listed separately.
-- [ ] Production build = the static files only (no tests or dev tools shipped).
-- [ ] Public deployment on a free static host (proposed: GitHub Pages on this repo). This needs one repo setting from Alex — I will give that step when we get there.
-- [ ] Final report: live URL, source URL, BUGS.md URL, actual test results, remaining limitations.
+Acceptance criteria (verified on the live site in https://github.com/Ello-Guvnor/HMSVictory/pull/11; **accepted by Alex on 2026-10-11**):
+- [x] Usable on desktop and a phone-sized screen (checked in the browser at both sizes; screenshots in the PR). Alex also played the live site on his iPhone (B8, B9).
+- [x] Keyboard-only play works end to end (placement, Start battle, firing, ending card, Esc, Restart; scripted keyboard-only run on the live site, no page errors).
+- [x] README explains how to play, how to run tests, and how it is deployed.
+- [x] BUGS.md lists only observed defects, each with repro, expected vs actual, cause, fix, regression test, commit; untested risks listed separately.
+- [x] Production build = the static files only (no tests or dev tools shipped). On the live site `tests/`, `tools/`, `package.json` and the `.md` files return 404.
+- [x] Public deployment on a free static host: GitHub Pages, https://ello-guvnor.github.io/HMSVictory/ (D24).
+- [x] Final report: live URL, source URL, BUGS.md URL and remaining limitations are in the README's Status section; actual test results are in https://github.com/Ello-Guvnor/HMSVictory/pull/11.
